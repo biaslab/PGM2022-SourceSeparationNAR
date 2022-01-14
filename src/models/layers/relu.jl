@@ -45,25 +45,7 @@ function propagate_error!(layer::ReluLayer)
     
 end
 
-# function propagate_error!(layer::ReluLayer, ∂L_∂y::Vector{<:Real})
-
-#     # set gradients for input and output and bias term
-#     dim = length(∂L_∂y)
-#     gradient_output = layer.gradient_output
-#     ∂L_∂x           = layer.gradient_input
-#     input           = layer.input
-#     @inbounds for k in 1:dim
-#         ∂L_∂yk = ∂L_∂y[k]
-#         gradient_output[k] = ∂L_∂yk
-#         ∂L_∂x[k] = ∂L_∂yk*drelu(input[k])
-#     end
-
-#     # return gradient at input of layer
-#     return ∂L_∂x
-
-# end
-
-# update!(layer::ReluLayer) = return
+update!(layer::ReluLayer) = return
 
 relu(x) = max(0.0, x)
 drelu(x) = x > 0 ? 1.0 : 0.0

@@ -69,7 +69,10 @@ function propagate_error!(layer::DenseLayer)
 
 end
 
-# function update!(layer::DenseLayer)
-#     update!(layer.W)
-#     update!(layer.b)
-# end
+function update!(layer::DenseLayer)
+
+    # update parameters in layer
+    update!(layer.W)
+    update!(layer.b)
+    
+end

@@ -1,7 +1,7 @@
 export Model
 export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, UvAdditiveLayer
 
-export forward!, propagate_error!#, update!
+export forward!, propagate_error!, update!
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -116,9 +116,14 @@ function propagate_error!(model::Model{L,T}) where { L, T <: Real }
 
 end
 
-# function update!(model::Model)
-#     layers = model.layers
-#     @inbounds for k in 1:length(layers)
-#         update!(layers[k])
-#     end
-# end
+function update!(model::Model)
+
+    # fetch layers
+    layers = model.layers
+
+    # update parameters in layers
+    @inbounds for layer in layers
+        update!(layer)
+    end
+
+end

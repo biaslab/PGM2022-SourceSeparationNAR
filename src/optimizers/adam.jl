@@ -122,20 +122,23 @@ function update!(x::T, optimizer::Adam{ T }, ∇::T) where { T <: AbstractMatrix
 
     sz = size(x)
 
-     @inbounds for k2 in 1:sz[2]
-         @inbounds for k1 in 1:sz[1]
+    @inbounds for k2 in 1:sz[2]
+        @inbounds for k1 in 1:sz[1]
+
+            # tmp access
+            ∇k1k2 = ∇[k1,k2]
 
             # update (biased) first moment
-            s[k1,k2] = ρ1*s[k1,k2] + iρ1*∇[k1,k2]
+            s[k1,k2] = ρ1*s[k1,k2] + iρ1*∇k1k2
 
             # update (unbiased) first moment
-            shat[k1,k2] = s[k1,k2] * itρ1
+            shat[k1,k2] = s[k1,k2] * ditρ1
 
             # update (biased) second moment
-            r[k1,k2] = ρ2*r[k1,k2] + iρ2*∇[k1,k2]^2
+            r[k1,k2] = ρ2*r[k1,k2] + iρ2*∇k1k2^2
 
             # update (unbiased) second moment
-            rhat[k1,k2] = r[k1,k2] * itρ2 
+            rhat[k1,k2] = r[k1,k2] * ditρ2 
 
             # perform accelerated gradient step
             diff[k1,k2] = λ*shat[k1,k2]/(sqrt(rhat[k1,k2]) + 1e-20)

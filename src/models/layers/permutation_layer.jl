@@ -39,4 +39,4 @@ function propagate_error!(layer::PermutationLayer)
 
 end
 
-# update!(layer::PermutationLayer) = return
+update!(layer::PermutationLayer) = return

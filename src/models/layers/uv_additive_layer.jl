@@ -77,8 +77,13 @@ function propagate_error!(layer::UvAdditiveLayer, ∂L_∂y::Vector{<:Real})
 end
 
 function update!(layer::UvAdditiveLayer)
+    
+    # fetch functions
     f = layer.f
-    @inbounds for k in 1:length(f)
-        update!(f[k])
+
+    # update parameters in functions
+    @inbounds for fk in f
+        update!(fk)
     end
+    
 end

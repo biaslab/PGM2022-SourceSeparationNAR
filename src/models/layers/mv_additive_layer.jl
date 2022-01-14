@@ -94,6 +94,14 @@ function propagate_error!(layer::MvAdditiveLayer)
 
 end
 
-# function update!(layer::AdditiveCouplingLayerSplit)
-#     update!(layer.f)
-# end
+function update!(layer::MvAdditiveLayer)
+    
+    # fetch functions
+    f = layer.f
+
+    # update parameters in functions
+    @inbounds for fk in f
+        update!(fk)
+    end
+    
+end
