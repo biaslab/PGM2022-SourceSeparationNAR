@@ -24,7 +24,7 @@ function forward!(layer::DenseLayer) where { T <: Real }
 
     # calculate output of layer
     output = layer.output
-    matmul!(output, W, input)
+    matmul!(output, W, input) # for improved speed, save Wt = W' and call matmul!(output, Wt', input)
     @inbounds for k = 1:dim_out
         output[k] += b[k]
     end  
@@ -34,43 +34,40 @@ function forward!(layer::DenseLayer) where { T <: Real }
     
 end
 
-# function propagate_error!(layer::DenseLayer, ∂L_∂y::Vector{<:Real})
+function propagate_error!(layer::DenseLayer)
 
-#     W       = layer.W
-#     b       = layer.b
+    # fetch from layer
+    dim_in  = layer.dim_in
+    dim_out = layer.dim_out
+    W       = layer.W
+    b       = layer.b
 
-#     ∂L_∂x   = layer.gradient_input
-#     ∂L_∂W   = W.gradient
-#     ∂L_∂b   = b.gradient
+    ∂L_∂x   = layer.gradient_input
+    ∂L_∂y   = layer.gradient_output
+    ∂L_∂W   = W.gradient
+    ∂L_∂b   = b.gradient
+    input   = layer.input
 
-#     dim_out = length(∂L_∂y)
-#     dim_in  = length(∂L_∂x)
+    # set gradients for b
+    @inbounds for k in 1:dim_out
+        ∂L_∂b[k] = ∂L_∂y[k]
+    end
 
-#     input = layer.input
+    # set gradient for W
+    @inbounds for k2 in 1:dim_out
+        ∂L_∂yk2 = ∂L_∂y[k2]
+        @inbounds for k1 in 1:dim_in
+            ∂L_∂W[k2,k1] = ∂L_∂yk2 * input[k1]
+        end
+    end
 
-#     # set gradients @inbounds for output and bias term
-#     gradient_output = layer.gradient_output
-#     @inbounds for k in 1:dim_out
-#         ∂L_∂yk = ∂L_∂y[k]
-#         gradient_output[k] = ∂L_∂yk
-#         ∂L_∂b[k] = ∂L_∂yk
-#     end
+    # set gradient at input
+    matmul!(∂L_∂x, W.value', ∂L_∂y)
 
-#     # set gradient @inbounds for W
-#     @inbounds for k2 in 1:dim_out
-#         ∂L_∂yk2 = ∂L_∂y[k2]
-#         @inbounds for k1 in 1:dim_in
-#             ∂L_∂W[k1,k2] = ∂L_∂yk2 * input[k1]
-#         end
-#     end
+    # return gradient at input of layer
+    return ∂L_∂x
 
-#     # set gradient at input
-#     matmul!(∂L_∂x, W.value', ∂L_∂y)
-
-#     # return gradient at input of layer
-#     return ∂L_∂x
-
-# end
+end
 
 # function update!(layer::DenseLayer)
 #     update!(layer.W)

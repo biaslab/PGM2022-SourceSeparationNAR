@@ -27,6 +27,24 @@ function forward!(layer::ReluLayer)
     
 end
 
+function propagate_error!(layer::ReluLayer) 
+    
+    # fetch input and output gradients in layer
+    dim             = layer.dim_in
+    input           = layer.input
+    gradient_output = layer.gradient_output
+    gradient_input  = layer.gradient_input
+
+    # update input gradient of layer
+    @inbounds for k = 1:dim
+        gradient_input[k] = drelu(input[k]) * gradient_output[k]
+    end
+
+    # return gradient input 
+    return gradient_input
+    
+end
+
 # function propagate_error!(layer::ReluLayer, ∂L_∂y::Vector{<:Real})
 
 #     # set gradients for input and output and bias term

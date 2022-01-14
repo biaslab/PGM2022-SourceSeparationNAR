@@ -55,38 +55,44 @@ function forward!(layer::MvAdditiveLayer)
     
 end
 
-# function propagate_error!(layer::AdditiveCouplingLayerSplit, ∂L_∂y::Vector{<:Real})
+function propagate_error!(layer::MvAdditiveLayer)
 
-#     # set gradient at output and input of layer
-#     gradient_output = layer.gradient_output
-#     ∂L_∂x  = layer.gradient_input
-#     dim = layer.dim
-#     @inbounds for k in 1:dim
-#         ∂L_∂yk = ∂L_∂y[k]
-#         gradient_output[k] = ∂L_∂yk
-#         ∂L_∂x[k]           = ∂L_∂yk
-#     end
+    # set gradient input of layer (the additive component)
+    gradient_input  = layer.gradient_input
+    gradient_output = layer.gradient_output
+    setgradientinput!(layer, gradient_output)
+    
+    # fetch partition dimension
+    f     = layer.f
+    len_f = length(f)
+    pdim  = layer.dim_in ÷ (len_f + 1)
 
-#     # set output gradient of flow (we partition a vector, so to prevent allocations we need to copy here)
-#     pdim = dim ÷ 2
-#     f = layer.f
-#     f_gradient_output = f.gradient_output
-#     @inbounds for k in 1:pdim
-#         f_gradient_output[k] = ∂L_∂y[pdim+k]
-#     end
+    # loop through coupling functions 
+    for k in 1:len_f
 
-#     # propagate gradient through flow
-#     f_input_gradient = propagate_error!(f)
+        # fetch current function
+        current_f = f[k]
 
-#     # copy output
-#     @inbounds for k in 1:pdim
-#         ∂L_∂x[k] += f_input_gradient[k]
-#     end
+        # set gradient outputs of current function (custom to prevent allocs)
+        current_f_gradient_output = current_f.gradient_output
+        @inbounds for ki in 1:pdim
+            current_f_gradient_output[ki] = gradient_output[ki + k*pdim]
+        end
 
-#     # return gradient at input of layer
-#     return ∂L_∂x
+        # run current function error backward
+        current_f_gradient_input = propagate_error!(current_f)::Vector{Float64}
 
-# end
+        # process current gradient input
+        @inbounds for ki in 1:pdim
+            gradient_input[ki+k*pdim] += current_f_gradient_input[ki]
+        end
+
+    end
+
+    # return gradient at input of layer
+    return gradient_input
+
+end
 
 # function update!(layer::AdditiveCouplingLayerSplit)
 #     update!(layer.f)

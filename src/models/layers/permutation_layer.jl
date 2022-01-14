@@ -25,22 +25,18 @@ function forward!(layer::PermutationLayer)
     
 end
 
-# function propagate_error!(layer::PermutationLayer, ∂L_∂y::Vector{<:Real})
+function propagate_error!(layer::PermutationLayer)
 
-#     # copy input in layer
-#     dim = layer.dim
-#     gradient_output = layer.gradient_output
-#     @inbounds for k in 1:dim
-#         gradient_output[k] = ∂L_∂y[k]
-#     end
+    # copy input in layer
+    gradient_output = layer.gradient_output
+    gradient_input  = layer.gradient_input
     
-#     # calculate output of layer
-#     gradient_input = layer.gradient_input
-#     mulT!(gradient_input, layer.P, ∂L_∂y) # mul!(gradient_input, P', ∂L_∂y)
+    # calculate output of layer
+    mulT!(gradient_input, layer.P, gradient_output) # mul!(gradient_input, P', ∂L_∂y)
 
-#     # return gradient at input of layer
-#     return gradient_input
+    # return gradient at input of layer
+    return gradient_input
 
-# end
+end
 
 # update!(layer::PermutationLayer) = return

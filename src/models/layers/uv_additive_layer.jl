@@ -8,11 +8,11 @@ mutable struct UvAdditiveLayer{F <: Tuple, T <: Real} <: AbstractLayer
     gradient_output :: Vector{T}
 end
 function UvAdditiveLayer(dim::Int, f)
-    # add assert
+    # todo: add assert
     return UvAdditiveLayer(dim, dim, (f,), zeros(dim), zeros(dim), zeros(dim), zeros(dim))
 end
 function UvAdditiveLayer(dim::Int, f::Tuple)
-    # add assert
+    # todo: add assert
     return UvAdditiveLayer(dim, dim, f, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
 end
 
@@ -46,31 +46,39 @@ function forward!(layer::UvAdditiveLayer)
     
 end
 
-# function propagate_error!(layer::UvAdditiveLayer, ∂L_∂y::Vector{<:Real})
+function propagate_error!(layer::UvAdditiveLayer, ∂L_∂y::Vector{<:Real})
 
-#     # set gradient at output of layer
-#     gradient_output = layer.gradient_output
-#     ∂L_∂x  = layer.gradient_input
-#     dim = layer.dim
-#     @inbounds for k in 1:dim
-#         ∂L_∂yk = ∂L_∂y[k]
-#         gradient_output[k] = ∂L_∂yk
-#         ∂L_∂x[k]           = ∂L_∂yk
-#     end
+    # set gradient input of layer (the additive component)
+    gradient_input  = layer.gradient_input
+    gradient_output = layer.gradient_output
+    setgradientinput!(layer, gradient_output)
+    
+    # fetch partition dimension
+    f     = layer.f
+    len_f = length(f)
 
-#     # propagate gradient to input of layer
-#     @inbounds for k in 1:dim-1
-#         ∂L_∂x[k] += propagate_error!(layer.f[k], ∂L_∂y[k+1])
-#     end
+    # loop through coupling functions 
+    for k in 1:len_f
 
-#     # return gradient at input of layer
-#     return ∂L_∂x
+        # fetch current function
+        current_f = f[k]
 
-# end
+        # set gradient outputs of current function
+        setgradientoutput!(current_f, gradient_output[k+1])
 
-# function update!(layer::UvAdditiveLayer)
-#     f = layer.f
-#     @inbounds for k in 1:length(f)
-#         update!(f[k])
-#     end
-# end
+        # run current function error backward
+        gradient_input[k] += propagate_error!(current_f)::Float64
+
+    end
+
+    # return gradient at input of layer
+    return gradient_input
+    
+end
+
+function update!(layer::UvAdditiveLayer)
+    f = layer.f
+    @inbounds for k in 1:length(f)
+        update!(f[k])
+    end
+end

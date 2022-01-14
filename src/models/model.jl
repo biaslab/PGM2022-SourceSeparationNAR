@@ -1,7 +1,7 @@
 export Model
 export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, UvAdditiveLayer
 
-export forward!#, propagate_error!, update!
+export forward!, propagate_error!#, update!
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -15,7 +15,7 @@ include("parameter.jl")
 # include layers
 include("layers/dense.jl")
 include("layers/mv_additive_layer.jl")
-# include("layers/uv_additive_layer.jl")
+include("layers/uv_additive_layer.jl")
 include("layers/permutation_layer.jl")
 include("layers/relu.jl")
 
@@ -76,34 +76,47 @@ function forward!(model::Model{L,T}) where { L, T <: Real }
     
 end
 
-# function propagate_error!(model::FlowModel{L,T}, ∂L_∂y::Vector{T}) where { L, T <: Real }
+function propagate_error!(model::Model{L,T}, gradient_output::Vector{T}) where { L, T <: Real }
 
-#     # set gradient at output of layer and input as running input
-#     gradient_output = model.gradient_output
-#     gradient_input  = model.gradient_input
-#     dim             = model.dim
-#     @inbounds for k in 1:dim
-#         ∂L_∂yk = ∂L_∂y[k]
-#         gradient_output[k] = ∂L_∂yk
-#         gradient_input[k] = ∂L_∂yk
-#     end
+    # set gradient output in model
+    setgradientoutput!(model, gradient_output)
 
-#     # propagate gradient through layers
-#     layers = model.layers
-#     @inbounds for k in 1:length(layers)
-#         layerk = layers[k]
-#         gradient_inputi = propagate_error!(layerk, gradient_input)::Vector{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
-#         @inbounds for ki in 1:dim
-#             gradient_input[ki] = gradient_inputi[ki]
-#         end
-#     end
+    # propagate error backwards
+    gradient_input = propagate_error!(model)
 
-#     # return gradient at input of layer
-#     return gradient_input
+    # return gradient input
+    return gradient_input
+    
+end
 
-# end
+function propagate_error!(model::Model{L,T}) where { L, T <: Real }
 
-# function update!(model::FlowModel)
+    # fetch layers
+    layers = model.layers
+
+    # set current gradient output
+    current_gradient_output = model.gradient_output
+
+    # propagate through layers
+    @inbounds for layer in reverse(layers)
+
+        # set gradient output in layer
+        setgradientoutput!(layer, current_gradient_output)
+
+        # run current layer forward
+        current_gradient_output = propagate_error!(layer)::Vector{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+    end
+
+    # update gradient input of model
+    setgradientinput!(model, current_gradient_output)
+
+    # return gradient input of model
+    return current_gradient_output
+
+end
+
+# function update!(model::Model)
 #     layers = model.layers
 #     @inbounds for k in 1:length(layers)
 #         update!(layers[k])
