@@ -6,8 +6,6 @@ export forward!, propagate_error!, update!
 abstract type AbstractModel end
 abstract type AbstractLayer end
 
-# include helpers
-include("helpers.jl")
 
 # include parameters
 include("parameter.jl")
@@ -20,24 +18,34 @@ include("layers/relu.jl")
 include("layers/softmax.jl")
 include("layers/uv_additive_layer.jl")
 
+# include helpers
+include("helpers.jl")
 
-mutable struct Model{L <: Tuple, T <: Real} <: AbstractModel
+mutable struct Model{L <: Tuple, T <: Real, V1 <: AbstractVector, V2 <: AbstractVector } <: AbstractModel
     dim_in          :: Int64
     dim_out         :: Int64
     layers          :: L
     input           :: Vector{T}
-    output          :: Vector{T}
+    output          :: V1
     gradient_input  :: Vector{T}
-    gradient_output :: Vector{T}
+    gradient_output :: V2
 end
 function Model(dim, layers)
-    return Model(dim, dim, layers, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+    if typeof(last(layers)) <: SoftmaxLayer
+        return Model(dim, dim, layers, zeros(dim), SoftmaxOutput(zeros(dim)), zeros(dim), SoftmaxGradientOutput(zeros(dim)))
+    else
+        return Model(dim, dim, layers, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+    end
 end
 function Model(dim_in, dim_out, layers)
-    return Model(dim_in, dim_out, layers, zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
+    if typeof(last(layers)) <: SoftmaxLayer
+        return Model(dim_in, dim_out, layers, zeros(dim_in), SoftmaxOutput(zeros(dim_out)), zeros(dim_in), SoftmaxGradientOutput(zeros(dim_out)))
+    else
+        return Model(dim_in, dim_out, layers, zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
+    end
 end
 
-function forward!(model::Model{L,T}, input::Vector{T}) where { L, T <: Real }
+function forward!(model::Model{L,T,V1,V2}, input::Vector{T}) where { L, T <: Real, V1, V2}
 
     # set input in model
     setinput!(model, input)
@@ -50,7 +58,7 @@ function forward!(model::Model{L,T}, input::Vector{T}) where { L, T <: Real }
 
 end
 
-function forward!(model::Model{L,T}) where { L, T <: Real }
+function forward!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
 
     # fetch layers
     layers = model.layers
@@ -73,11 +81,11 @@ function forward!(model::Model{L,T}) where { L, T <: Real }
     setoutput!(model, current_input)
 
     # return output
-    return current_input
+    return model.output
     
 end
 
-function propagate_error!(model::Model{L,T}, gradient_output::Vector{T}) where { L, T <: Real }
+function propagate_error!(model::Model{L,T,V1,V2}, gradient_output::Vector{T}) where { L, T <: Real, V1, V2 }
 
     # set gradient output in model
     setgradientoutput!(model, gradient_output)
@@ -90,7 +98,7 @@ function propagate_error!(model::Model{L,T}, gradient_output::Vector{T}) where {
     
 end
 
-function propagate_error!(model::Model{L,T}) where { L, T <: Real }
+function propagate_error!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
 
     # fetch layers
     layers = model.layers
@@ -113,7 +121,7 @@ function propagate_error!(model::Model{L,T}) where { L, T <: Real }
     setgradientinput!(model, current_gradient_output)
 
     # return gradient input of model
-    return current_gradient_output
+    return model.gradient_input
 
 end
 

@@ -1,4 +1,4 @@
-using Octavian, LinearAlgebra
+using Octavian, LinearAlgebra, Random
 
 mutable struct DenseLayer{T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
     dim_in          :: Int64
