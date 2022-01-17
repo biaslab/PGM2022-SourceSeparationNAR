@@ -1,5 +1,5 @@
 export Model
-export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, UvAdditiveLayer
+export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, SoftmaxLayer, UvAdditiveLayer
 
 export forward!, propagate_error!, update!
 
@@ -15,9 +15,10 @@ include("parameter.jl")
 # include layers
 include("layers/dense.jl")
 include("layers/mv_additive_layer.jl")
-include("layers/uv_additive_layer.jl")
 include("layers/permutation_layer.jl")
 include("layers/relu.jl")
+include("layers/softmax.jl")
+include("layers/uv_additive_layer.jl")
 
 
 mutable struct Model{L <: Tuple, T <: Real} <: AbstractModel
