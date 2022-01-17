@@ -50,14 +50,14 @@ function propagate_error!(layer::DenseLayer)
 
     # set gradients for b
     @inbounds for k in 1:dim_out
-        ∂L_∂b[k] = ∂L_∂y[k]
+        ∂L_∂b[k] += ∂L_∂y[k]
     end
 
     # set gradient for W
     @inbounds for k2 in 1:dim_out
         ∂L_∂yk2 = ∂L_∂y[k2]
         @inbounds for k1 in 1:dim_in
-            ∂L_∂W[k2,k1] = ∂L_∂yk2 * input[k1]
+            ∂L_∂W[k2,k1] += ∂L_∂yk2 * input[k1]
         end
     end
 
