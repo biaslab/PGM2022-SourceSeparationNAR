@@ -40,3 +40,5 @@ function propagate_error!(layer::PermutationLayer)
 end
 
 update!(layer::PermutationLayer) = return
+
+setlr!(layer::PermutationLayer, lr) = return

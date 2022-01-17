@@ -69,3 +69,5 @@ function propagate_error!(layer::SoftmaxLayer)
 end
 
 update!(layer::SoftmaxLayer) = return
+
+setlr!(layer::SoftmaxLayer, lr) = return

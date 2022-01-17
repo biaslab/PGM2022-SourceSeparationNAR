@@ -92,3 +92,7 @@ function update!(x::Parameter)
     end
 
 end
+
+function setlr!(x::Parameter, lr)
+    x.optimizer.λ = lr
+end

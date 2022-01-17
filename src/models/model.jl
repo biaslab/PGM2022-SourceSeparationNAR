@@ -1,7 +1,7 @@
 export Model
 export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, SoftmaxLayer, UvAdditiveLayer
 
-export forward!, propagate_error!, update!
+export forward!, propagate_error!, update!, setlr!
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -133,6 +133,18 @@ function update!(model::Model)
     # update parameters in layers
     @inbounds for layer in layers
         update!(layer)
+    end
+
+end
+
+function setlr!(model::Model, lr)
+
+    # fetch layers
+    layers = model.layers
+
+    # update parameters in layers
+    @inbounds for layer in layers
+        setlr!(layer, lr)
     end
 
 end

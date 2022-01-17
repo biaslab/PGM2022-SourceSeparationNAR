@@ -87,3 +87,15 @@ function update!(layer::UvAdditiveLayer)
     end
     
 end
+
+function setlr!(layer::UvAdditiveLayer, lr)
+    
+    # fetch functions
+    f = layer.f
+
+    # update parameters in functions
+    @inbounds for fk in f
+        setlr!(fk, lr)
+    end
+    
+end

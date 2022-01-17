@@ -76,3 +76,11 @@ function update!(layer::DenseLayer)
     update!(layer.b)
     
 end
+
+function setlr!(layer::DenseLayer, lr)
+
+    # update parameters in layer
+    setlr!(layer.W, lr)
+    setlr!(layer.b, lr)
+    
+end
