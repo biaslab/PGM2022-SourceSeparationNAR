@@ -1,8 +1,10 @@
-function MSE(true_value::T, predicted_value::T) where { T <: Real }
+struct MSE <: AbstractLoss end
+
+function loss(::MSE, true_value::T, predicted_value::T) where { T <: Real }
     return abs2(true_value, predicted_value)
 end
 
-function MSE(true_value::T, predicted_value::T) where { T <: AbstractVector }
+function loss(::MSE, true_value::T, predicted_value::T) where { T <: AbstractVector }
     len = length(true_value)
     @assert len == length(predicted_value)
 
@@ -15,19 +17,19 @@ function MSE(true_value::T, predicted_value::T) where { T <: AbstractVector }
 end
 
 
-function dMSE(true_value::T, predicted_value::T) where { T <: Real }
+function dloss(::MSE, true_value::T, predicted_value::T) where { T <: Real }
     return 2*(predicted_value - true_value)
 end
 
-function dMSE(true_value::T, predicted_value::T) where { T <: AbstractVector }
+function dloss(::MSE, true_value::T, predicted_value::T) where { T <: AbstractVector }
     len = length(true_value)
     @assert len == length(predicted_value)
 
     dloss = Vector{T}(undef, len)
-    return dMSE!(dloss, true_value, predicted_value)
+    return dloss!(Type{MSE}, dloss, true_value, predicted_value)
 end
 
-function dMSE!(dloss::T, true_value::T, predicted_value::T) where { T <: AbstractVector }
+function dloss!(::MSE, dloss::T, true_value::T, predicted_value::T) where { T <: AbstractVector }
     for k = 1:length(true_value)
         dloss[k] = 2*(predicted_value[k] - true_value[k])
     end

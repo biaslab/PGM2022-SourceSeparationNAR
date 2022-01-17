@@ -7,6 +7,7 @@ module SourceSeparationNF
     include("models/model.jl")
 
     include("losses/losses.jl")
-    
+
+    include("train.jl")
 
 end
