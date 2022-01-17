@@ -4,7 +4,7 @@ mutable struct GradientDescent{T} <: AbstractOptimizer
     diff :: T
 end
 function GradientDescent(;λ::T=1e-8)  where { T <: Real }
-    return  Adam(λ, 1, zero(T))
+    return  GradientDescent(λ, 1, zero(T))
 end
 function GradientDescent(len::Int; λ::T=1e-8)  where { T <: Real }
     return GradientDescent(λ, 1, zeros(T, len))
