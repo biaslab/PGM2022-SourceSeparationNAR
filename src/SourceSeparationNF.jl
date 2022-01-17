@@ -5,6 +5,8 @@ module SourceSeparationNF
     include("optimizers/optimizers.jl")
 
     include("models/model.jl")
+
+    include("losses/losses.jl")
     
 
 end
