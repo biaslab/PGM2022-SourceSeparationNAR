@@ -9,7 +9,7 @@ end
 function GradientDescent(len::Int; λ::T=1e-8)  where { T <: Real }
     return GradientDescent(λ, 1, zeros(T, len))
 end
-function GradientDescent(size::Tuple{<:Int}; λ::T=1e-8) where { T <: Real }
+function GradientDescent(size::Tuple; λ::T=1e-8) where { T <: Real }
     return GradientDescent(λ, 1, zeros(T, size))
 end
 
@@ -39,7 +39,7 @@ function update!(x::T, optimizer::GradientDescent{ T }, ∇::T) where { T <: Abs
     # fetch parameters
     λ, _, diff = getall(optimizer)
 
-     @inbounds for k in 1:length(x)
+    @inbounds for k in 1:length(x)
 
         # perform accelerated gradient step
         diff[k] = λ*∇[k]
@@ -64,11 +64,11 @@ function update!(x::T, optimizer::GradientDescent{ T }, ∇::T) where { T <: Abs
 
     sz = size(x)
 
-     @inbounds for k2 in 1:sz[2]
-         @inbounds for k1 in 1:sz[1]
+    @inbounds for k2 in 1:sz[2]
+        @inbounds for k1 in 1:sz[1]
 
             # perform accelerated gradient step
-            diff[k1,k2] = λ*∇[k2,k1]
+            diff[k1,k2] = λ*∇[k1,k2]
 
             # update x
             x[k1,k2] -= diff[k1,k2]

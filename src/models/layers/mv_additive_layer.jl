@@ -84,7 +84,7 @@ function propagate_error!(layer::MvAdditiveLayer)
 
         # process current gradient input
         @inbounds for ki in 1:pdim
-            gradient_input[ki+k*pdim] += current_f_gradient_input[ki]
+            gradient_input[ki+(k-1)*pdim] += current_f_gradient_input[ki]
         end
 
     end
