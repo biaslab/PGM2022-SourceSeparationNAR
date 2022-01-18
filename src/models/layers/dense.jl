@@ -10,11 +10,11 @@ mutable struct DenseLayer{T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOpti
     gradient_input  :: Vector{T}
     gradient_output :: Vector{T}
 end
-function DenseLayer(dim_in, dim_out)
-    return DenseLayer(dim_in, dim_out, Parameter(randn(dim_out, dim_in)), Parameter(randn(dim_out)), zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
+function DenseLayer(dim_in, dim_out; initializer::AbstractInitializer=GlorotUniform(dim_in, dim_out))
+    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer, (dim_out, dim_in))), Parameter(zeros(dim_out)), zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
 end
 
-function forward!(layer::DenseLayer) where { T <: Real }
+function forward!(layer::DenseLayer)
 
     # fetch from layer
     dim_out = layer.dim_out
@@ -54,10 +54,10 @@ function propagate_error!(layer::DenseLayer)
     end
 
     # set gradient for W
-    @inbounds for k2 in 1:dim_out
-        ∂L_∂yk2 = ∂L_∂y[k2]
-        @inbounds for k1 in 1:dim_in
-            ∂L_∂W[k2,k1] += ∂L_∂yk2 * input[k1]
+    @inbounds for k2 in 1:dim_in
+        inputk2 = input[k2]
+        @inbounds for k1 in 1:dim_out
+            ∂L_∂W[k1,k2] += ∂L_∂y[k1] * inputk2
         end
     end
 

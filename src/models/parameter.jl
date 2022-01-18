@@ -8,14 +8,14 @@ mutable struct Parameter{T, O <: AbstractOptimizer}
     it         :: Int64
 end
 
-Parameter(value::T; batch_size::Int64=16) where { T <: Real } = Parameter(value, zero(T), Adam(), batch_size, 0)
-function Parameter(value::AbstractVector{T}; batch_size::Int64=16) where { T <: Real }
+Parameter(value::T; batch_size::Int64=128) where { T <: Real } = Parameter(value, zero(T), GradientDescent(), batch_size, 0)
+function Parameter(value::AbstractVector{T}; batch_size::Int64=128) where { T <: Real }
     dim = length(value)
-    return Parameter(value, zeros(T, dim), Adam(dim), batch_size, 0)
+    return Parameter(value, zeros(T, dim), GradientDescent(dim), batch_size, 0)
 end
-function Parameter(value::AbstractMatrix{T}; batch_size::Int64=16) where { T <: Real }
+function Parameter(value::AbstractMatrix{T}; batch_size::Int64=128) where { T <: Real }
     sz = size(value)
-    return Parameter(value, zeros(T, sz), Adam(sz), batch_size, 0)
+    return Parameter(value, zeros(T, sz), GradientDescent(sz), batch_size, 0)
 end
 
 # arithmetic operators

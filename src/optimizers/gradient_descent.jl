@@ -77,7 +77,7 @@ function update!(x::T, optimizer::GradientDescent{ T }, ∇::T) where { T <: Abs
     end
 
     # update iteration count
-    optimizer.it   += 1
+    optimizer.it += 1
 
     # return x
     return x
