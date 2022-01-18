@@ -60,7 +60,7 @@ function propagate_error!(layer::SoftmaxLayer)
     # update input gradient of layer
     Z = logsumexp(output)
     @inbounds for k = 1:dim
-        gradient_input[k] = (1 - exp(output[k] - Z)) * gradient_output[k] # compensate for the factor output[k] with loss function
+        gradient_input[k] = exp(output[k] - Z) + gradient_output[k] # compensate for the factor output[k] with loss function
     end
 
     # return gradient input 
