@@ -62,14 +62,14 @@ function update!(x::Parameter{<:Real, <:AbstractOptimizer})
     end
 
 end
-function update!(x::Parameter)
+function update!(x::Parameter{<:AbstractVector, <:AbstractOptimizer})
 
     # update batch counter
     x.it += 1
-    batch_size = x.batch_size
+    ibatch_size = 1/x.batch_size
 
     # if batch size is reached
-    if x.it == batch_size
+    if x.it == x.batch_size
 
         # fetch parameters
         gradient = x.gradient
@@ -77,7 +77,7 @@ function update!(x::Parameter)
 
         # normalize gradient
         @inbounds for k in 1:len
-            gradient[k] /= batch_size
+            gradient[k] *= ibatch_size
         end
 
         # update value
@@ -86,6 +86,40 @@ function update!(x::Parameter)
         # reset gradient and batch_counter
         @inbounds for k in 1:len
             gradient[k] = 0.0
+        end
+        x.it = 0
+
+    end
+
+end
+function update!(x::Parameter{<:AbstractMatrix, <:AbstractOptimizer})
+
+    # update batch counter
+    x.it += 1
+    ibatch_size = 1/x.batch_size
+
+    # if batch size is reached
+    if x.it == x.batch_size
+
+        # fetch parameters
+        gradient = x.gradient
+        sz = size(gradient)
+
+        # normalize gradient
+        @inbounds for k2 in 1:sz[2]
+            @inbounds for k1 in 1:sz[1]
+                gradient[k1,k2] *= ibatch_size
+            end
+        end
+
+        # update value
+        update!(x.value, x.optimizer, x.gradient)
+
+        # reset gradient and batch_counter
+        @inbounds for k2 in 1:sz[2]
+            @inbounds for k1 in 1:sz[1]
+                gradient[k1,k2] = 0.0
+            end
         end
         x.it = 0
 
