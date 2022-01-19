@@ -8,11 +8,18 @@ mutable struct MvAdditiveLayer{L <: Tuple, T <: Real} <: AbstractLayer
     gradient_output :: Vector{T}
 end
 function MvAdditiveLayer(dim::Int, f::L) where { L <: Tuple}
-    # TODO add assert for dims in f
+    for k in length(f)-1
+        @assert f[k+1].dim_in == f[k].dim_out
+    end
+    ind = 0
+    for fk in f
+        ind += fk.dim_in 
+    end
+    @assert ind + f[end].dim_out == dim
     return MvAdditiveLayer(dim, dim, f, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
 end
 function MvAdditiveLayer(dim::Int, f)
-    # TODO add assert for dims in f
+    @assert f.dim_in + f.dim_out == dim
     return MvAdditiveLayer(dim, dim, (f,), zeros(dim), zeros(dim), zeros(dim), zeros(dim))
 end
 
@@ -23,30 +30,36 @@ function forward!(layer::MvAdditiveLayer)
     output = layer.output
     setoutput!(layer, input)
     
-    # fetch partition dimension
+    # fetch coupling functions
     f     = layer.f
     len_f = length(f)
-    pdim  = layer.dim_in ÷ (len_f + 1)
+
+    # set starting index
+    ind   = 0
 
     # loop through coupling functions 
-    for k in 1:len_f
+    @inbounds for k in 1:len_f
 
         # fetch current function
         current_f = f[k]
 
         # set input of current function (custom to prevent allocs)
         current_f_input = current_f.input
-        @inbounds for ki in 1:pdim
-            current_f_input[ki] = input[ki + (k-1)*pdim]
+        current_f_dim   = current_f.dim_in
+        @inbounds for ki in 1:current_f_dim
+            current_f_input[ki] = input[ki + ind]
         end
 
         # run current function forward
         current_f_output = forward!(current_f)::Vector{Float64}
 
         # process current output
-        @inbounds for ki in 1:pdim
-            output[ki+k*pdim] += current_f_output[ki]
+        @inbounds for ki in 1:current_f_dim
+            output[ki+current_f_dim+ind] += current_f_output[ki]
         end
+
+        # update index
+        ind += current_f_dim
 
     end
 
@@ -65,27 +78,33 @@ function propagate_error!(layer::MvAdditiveLayer)
     # fetch partition dimension
     f     = layer.f
     len_f = length(f)
-    pdim  = layer.dim_in ÷ (len_f + 1)
+    
+    # set starting index
+    ind   = 0
 
     # loop through coupling functions 
-    for k in 1:len_f
+    @inbounds for k in 1:len_f
 
         # fetch current function
         current_f = f[k]
+        current_f_dim = current_f.dim_in
 
         # set gradient outputs of current function (custom to prevent allocs)
         current_f_gradient_output = current_f.gradient_output
-        @inbounds for ki in 1:pdim
-            current_f_gradient_output[ki] = gradient_output[ki + k*pdim]
+        @inbounds for ki in 1:current_f_dim
+            current_f_gradient_output[ki] = gradient_output[ki + current_f_dim + ind]
         end
 
         # run current function error backward
         current_f_gradient_input = propagate_error!(current_f)::Vector{Float64}
 
         # process current gradient input
-        @inbounds for ki in 1:pdim
-            gradient_input[ki+(k-1)*pdim] += current_f_gradient_input[ki]
+        @inbounds for ki in 1:current_f_dim
+            gradient_input[ki+ind] += current_f_gradient_input[ki]
         end
+        
+        # update index
+        ind += current_f_dim
 
     end
 

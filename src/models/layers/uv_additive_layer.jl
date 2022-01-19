@@ -58,7 +58,7 @@ function propagate_error!(layer::UvAdditiveLayer, ∂L_∂y::Vector{<:Real})
     len_f = length(f)
 
     # loop through coupling functions 
-    for k in 1:len_f
+    @inbounds for k in 1:len_f
 
         # fetch current function
         current_f = f[k]
