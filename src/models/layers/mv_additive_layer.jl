@@ -148,3 +148,5 @@ function setbatchsize!(layer::MvAdditiveLayer, batch_size::Int64)
     end
     
 end
+
+isinvertible(layer::MvAdditiveLayer) = true

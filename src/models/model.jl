@@ -3,6 +3,7 @@ export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, SoftmaxLayer, U
 
 export forward!, propagate_error!, update!
 export setlr!, setbatchsize!
+export isinvertible
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -159,5 +160,12 @@ function setbatchsize!(model::Model, batch_size::Int64)
     @inbounds for layer in layers
         setbatchsize!(layer, batch_size)
     end
+
+end
+
+function isinvertible(model::Model)
+
+    # assert per layer
+    return mapreduce(isinvertible, *, model.layers)
 
 end
