@@ -99,3 +99,15 @@ function setlr!(layer::UvAdditiveLayer, lr)
     end
     
 end
+
+function setbatchsize!(layer::UvAdditiveLayer, batch_size::Int64)
+    
+    # fetch functions
+    f = layer.f
+
+    # update parameters in functions
+    @inbounds for fk in f
+        setbatchsize!(fk, batch_size)
+    end
+    
+end

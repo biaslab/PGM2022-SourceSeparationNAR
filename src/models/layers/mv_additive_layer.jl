@@ -117,3 +117,15 @@ function setlr!(layer::MvAdditiveLayer, lr)
     end
     
 end
+
+function setbatchsize!(layer::MvAdditiveLayer, batch_size::Int64)
+    
+    # fetch functions
+    f = layer.f
+
+    # update parameters in functions
+    @inbounds for fk in f
+        setbatchsize!(fk, batch_size)
+    end
+    
+end

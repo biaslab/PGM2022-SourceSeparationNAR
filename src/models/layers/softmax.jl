@@ -71,3 +71,5 @@ end
 update!(layer::SoftmaxLayer) = return
 
 setlr!(layer::SoftmaxLayer, lr) = return
+
+setbatchsize!(layer::SoftmaxLayer, batch_size) = return

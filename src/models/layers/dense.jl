@@ -10,8 +10,8 @@ mutable struct DenseLayer{T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOpti
     gradient_input  :: Vector{T}
     gradient_output :: Vector{T}
 end
-function DenseLayer(dim_in, dim_out; initializer::AbstractInitializer=GlorotUniform(dim_in, dim_out))
-    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer, (dim_out, dim_in))), Parameter(zeros(dim_out)), zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
+function DenseLayer(dim_in, dim_out; initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=Adam)
+    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), Parameter(rand(initializer[2], dim_out), optimizer), zeros(dim_in), zeros(dim_out), zeros(dim_in), zeros(dim_out))
 end
 
 function forward!(layer::DenseLayer)
@@ -82,5 +82,13 @@ function setlr!(layer::DenseLayer, lr)
     # update parameters in layer
     setlr!(layer.W, lr)
     setlr!(layer.b, lr)
+    
+end
+
+function setbatchsize!(layer::DenseLayer, batch_size::Int64)
+
+    # update parameters in layer
+    setbatchsize!(layer.W, batch_size)
+    setbatchsize!(layer.b, batch_size)
     
 end

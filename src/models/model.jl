@@ -1,7 +1,8 @@
 export Model
 export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, SoftmaxLayer, UvAdditiveLayer
 
-export forward!, propagate_error!, update!, setlr!
+export forward!, propagate_error!, update!
+export setlr!, setbatchsize!
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -145,6 +146,18 @@ function setlr!(model::Model, lr)
     # update parameters in layers
     @inbounds for layer in layers
         setlr!(layer, lr)
+    end
+
+end
+
+function setbatchsize!(model::Model, batch_size::Int64)
+
+    # fetch layers
+    layers = model.layers
+
+    # update parameters in layers
+    @inbounds for layer in layers
+        setbatchsize!(layer, batch_size)
     end
 
 end

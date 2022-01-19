@@ -49,5 +49,7 @@ update!(layer::ReluLayer) = return
 
 setlr!(layer::ReluLayer, lr) = return
 
+setbatchsize!(layer::ReluLayer, batch_size) = return
+
 relu(x) = max(0.0, x)
 drelu(x) = x > 0 ? 1.0 : 0.0

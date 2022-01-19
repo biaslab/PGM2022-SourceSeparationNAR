@@ -42,3 +42,5 @@ end
 update!(layer::PermutationLayer) = return
 
 setlr!(layer::PermutationLayer, lr) = return
+
+setbatchsize!(layer::PermutationLayer, batch_size) = return

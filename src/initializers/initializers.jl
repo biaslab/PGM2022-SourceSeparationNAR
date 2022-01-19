@@ -1,3 +1,4 @@
+export AbstractInitializer
 export GlorotNormal, GlorotUniform, HeNormal, HeUniform, Ones, RandomNormal, RandomUniform, TruncatedNormal, Zeros
 
 abstract type AbstractInitializer end

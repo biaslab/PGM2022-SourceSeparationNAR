@@ -8,14 +8,14 @@ mutable struct Parameter{T, O <: AbstractOptimizer}
     it         :: Int64
 end
 
-Parameter(value::T; batch_size::Int64=128) where { T <: Real } = Parameter(value, zero(T), GradientDescent(), batch_size, 0)
-function Parameter(value::AbstractVector{T}; batch_size::Int64=128) where { T <: Real }
+Parameter(value::T, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real } = Parameter(value, zero(T), optimizer(), batch_size, 0)
+function Parameter(value::AbstractVector{T}, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real }
     dim = length(value)
-    return Parameter(value, zeros(T, dim), GradientDescent(dim), batch_size, 0)
+    return Parameter(value, zeros(T, dim), optimizer(dim), batch_size, 0)
 end
-function Parameter(value::AbstractMatrix{T}; batch_size::Int64=128) where { T <: Real }
+function Parameter(value::AbstractMatrix{T}, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real }
     sz = size(value)
-    return Parameter(value, zeros(T, sz), GradientDescent(sz), batch_size, 0)
+    return Parameter(value, zeros(T, sz), optimizer(sz), batch_size, 0)
 end
 
 # arithmetic operators
@@ -129,4 +129,8 @@ end
 
 function setlr!(x::Parameter, lr)
     x.optimizer.λ = lr
+end
+
+function setbatchsize!(x::Parameter, batch_size::Int64)
+    x.batch_size = batch_size
 end
