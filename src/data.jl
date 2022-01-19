@@ -1,3 +1,5 @@
+export prepare_data
+
 ## data.jl Julia code to handle matrix-type data on disc
 using Statistics
 using Distributed

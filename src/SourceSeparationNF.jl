@@ -12,4 +12,6 @@ module SourceSeparationNF
 
     include("train.jl")
 
+    include("data.jl")
+
 end
