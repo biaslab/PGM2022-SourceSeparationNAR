@@ -7,6 +7,7 @@ using FileIO
 using ProgressMeter
 using DSP
 using HDF5
+using Random
 
 ## A data handle, either in memory or on disk, perhaps even mmapped but I haven't seen any
 ## advantage of that.  It contains a list of either files (where the data is stored)
@@ -148,6 +149,10 @@ end
 ## define an iterator for Data
 Base.length(x::Data) = length(x.list)
 
+# define iterors 
+Random.shuffle!(x::Data) = Random.shuffle!(x.list)
+Random.shuffle(x::Data) = Random.shuffle(x.list)
+Base.iterate(x::Data, state=1) = state > length(x) ? nothing : (x[state], state+1)
 
 ## This function is like pmap(), but executes each element of Data on a predestined
 ## worker, so that file caching at the local machine is beneficial.
