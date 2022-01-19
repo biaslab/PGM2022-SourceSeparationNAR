@@ -75,3 +75,5 @@ setlr!(layer::SoftmaxLayer, lr) = return
 setbatchsize!(layer::SoftmaxLayer, batch_size) = return
 
 isinvertible(layer::SoftmaxLayer) = false
+
+nr_params(layer::SoftmaxLayer) = 0

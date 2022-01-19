@@ -46,3 +46,5 @@ setlr!(layer::PermutationLayer, lr) = return
 setbatchsize!(layer::PermutationLayer, batch_size) = return
 
 isinvertible(layer::PermutationLayer) = true
+
+nr_params(layer::PermutationLayer) = 0

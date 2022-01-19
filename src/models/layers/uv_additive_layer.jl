@@ -113,3 +113,5 @@ function setbatchsize!(layer::UvAdditiveLayer, batch_size::Int64)
 end
 
 isinvertible(layer::UvAdditiveLayer) = true
+
+nr_params(layer::UvAdditiveLayer) = 0

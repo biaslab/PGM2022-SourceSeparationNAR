@@ -1,4 +1,4 @@
-import Base: +, -, *, /, ==, >=, <=, >, <
+import Base: +, -, *, /, ==, >=, <=, >, <, length, size
 
 mutable struct Parameter{T, O <: AbstractOptimizer}
     value      :: T
@@ -39,6 +39,10 @@ end
 (>)(x, y::Parameter) = x > y.value
 (<)(x::Parameter, y) = x.value < y
 (<)(x, y::Parameter) = x < y.value
+
+# other operators
+length(x::Parameter) = length(x.value)
+size(x::Parameter) = size(x.value)
 
 function update!(x::Parameter{<:Real, <:AbstractOptimizer})
 

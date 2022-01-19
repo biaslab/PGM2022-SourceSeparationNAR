@@ -94,3 +94,5 @@ function setbatchsize!(layer::DenseLayer, batch_size::Int64)
 end
 
 isinvertible(layer::DenseLayer) = false
+
+nr_params(layer::DenseLayer) = length(layer.W) + length(layer.b)

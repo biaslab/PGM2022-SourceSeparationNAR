@@ -53,5 +53,7 @@ setbatchsize!(layer::ReluLayer, batch_size) = return
 
 isinvertible(layer::ReluLayer) = false
 
+nr_params(layer::ReluLayer) = 0
+
 relu(x) = max(0.0, x)
 drelu(x) = x > 0 ? 1.0 : 0.0

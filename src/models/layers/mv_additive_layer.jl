@@ -150,3 +150,5 @@ function setbatchsize!(layer::MvAdditiveLayer, batch_size::Int64)
 end
 
 isinvertible(layer::MvAdditiveLayer) = true
+
+nr_params(layer::MvAdditiveLayer) = mapreduce(nr_params, +, layer.f)
