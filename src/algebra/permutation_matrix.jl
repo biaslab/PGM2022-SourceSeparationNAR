@@ -76,7 +76,7 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::PermutationMatrix, v::AbstractVector)
     ind = getind(P)
-    @turbo for k in 1:size(P,1)
+    #= =# for k in 1:size(P,1)
         y[k] = v[ind[k]]
     end
 end
@@ -89,7 +89,7 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
+    #= =# for k in 1:size(P,1)
         y[ind[k]] = v[k]
     end
 end
@@ -103,14 +103,14 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
+    #= =# for k in 1:size(P,1)
         y[ind[k]] = v[k]
     end
 end
 
 function mulT!(y::AbstractVector, P::PermutationMatrix{T}, v::AbstractVector) where { T }
     ind = getind(P) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
+    #= =# for k in 1:size(P,1)
         y[ind[k]] = v[k]
     end
 end
@@ -125,8 +125,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::PermutationMatrix{T}, X::AbstractMatrix) where { T }
     ind = getind(P)
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,1)
+        for ki = 1:size(Y,2)
             Y[k,ki] = X[ind[k],ki]
         end
     end
@@ -141,8 +141,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,1)
+        for ki = 1:size(Y,2)
             Y[ind[k],ki] = X[k,ki]
         end
     end
@@ -157,8 +157,17 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,1)
+        for ki = 1:size(Y,2)
+            Y[ind[k],ki] = X[k,ki]
+        end
+    end
+end
+
+function mulT!(Y::AbstractMatrix, P::PermutationMatrix{T}, X::AbstractMatrix) where { T }
+    ind = getind(P)
+    #= =# for k in 1:size(Y,1)
+        for ki = 1:size(Y,2)
             Y[ind[k],ki] = X[k,ki]
         end
     end
@@ -183,8 +192,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix)
     ind = getind(P)
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,2)
+        for ki = 1:size(Y,1)
             Y[ki,ind[k]] = X[ki,k]
         end
     end
@@ -199,8 +208,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,2)
+        for ki = 1:size(Y,1)
             Y[ki,k] = X[ki,ind[k]]
         end
     end
@@ -215,8 +224,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, ) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @turbo for k in 1:size(P,1)
-        for ki = 1:size(P,1)
+    #= =# for k in 1:size(Y,2)
+        for ki = 1:size(Y,1)
             Y[ki,k] = X[ki,ind[k]]
         end
     end
@@ -243,7 +252,7 @@ function PT_X_P!(Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix)
     ind = getind(P)
 
     # perform permutation operation
-    @turbo for k1 = 1:size(P,1)
+    #= =# for k1 = 1:size(P,1)
         for k2 = 1:size(P,1)
             Y[ind[k1], ind[k2]] = X[k1,k2] 
         end
