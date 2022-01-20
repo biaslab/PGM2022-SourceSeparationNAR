@@ -1,5 +1,6 @@
 module SourceSeparationNF
 
+    include("algebra/custom_mul.jl")
     include("algebra/permutation_matrix.jl")
     
     include("optimizers/optimizers.jl")

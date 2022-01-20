@@ -24,10 +24,7 @@ function forward!(layer::DenseLayer)
 
     # calculate output of layer
     output = layer.output
-    matmul!(output, W, input) # for improved speed, save Wt = W' and call matmul!(output, Wt', input)
-    @inbounds for k = 1:dim_out
-        output[k] += b[k]
-    end  
+    custom_mulp!(output, W, input, b)
 
     # return output 
     return output
@@ -49,20 +46,20 @@ function propagate_error!(layer::DenseLayer)
     input   = layer.input
 
     # set gradients for b
-    @inbounds for k in 1:dim_out
+    @turbo for k in 1:dim_out
         ∂L_∂b[k] += ∂L_∂y[k]
     end
 
     # set gradient for W
-    @inbounds for k2 in 1:dim_in
+    @turbo for k2 in 1:dim_in
         inputk2 = input[k2]
-        @inbounds for k1 in 1:dim_out
+        for k1 in 1:dim_out
             ∂L_∂W[k1,k2] += ∂L_∂y[k1] * inputk2
         end
     end
 
     # set gradient at input
-    matmul!(∂L_∂x, W.value', ∂L_∂y)
+    custom_mul!(∂L_∂x, W.value', ∂L_∂y)
 
     # return gradient at input of layer
     return ∂L_∂x

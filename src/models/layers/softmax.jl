@@ -38,7 +38,7 @@ function forward!(layer::SoftmaxLayer)
     output = layer.output.value
 
     # update output of layer
-    @inbounds for k = 1:dim
+    @turbo for k = 1:dim
         output[k] = input[k]
     end
     # softmax!(output) # for numerical stability use custom vector type instead.
@@ -59,7 +59,7 @@ function propagate_error!(layer::SoftmaxLayer)
 
     # update input gradient of layer
     Z = logsumexp(output)
-    @inbounds for k = 1:dim
+    @turbo for k = 1:dim
         gradient_input[k] = exp(output[k] - Z) + gradient_output[k] # compensate for the factor output[k] with loss function
     end
 

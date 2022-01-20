@@ -39,7 +39,7 @@ function update!(x::T, optimizer::GradientDescent{ T }, ∇::T) where { T <: Abs
     # fetch parameters
     λ, _, diff = getall(optimizer)
 
-    @inbounds for k in 1:length(x)
+    @turbo for k in 1:length(x)
 
         # perform accelerated gradient step
         diff[k] = λ*∇[k]
@@ -62,10 +62,10 @@ function update!(x::T, optimizer::GradientDescent{ T }, ∇::T) where { T <: Abs
     # fetch parameters
     λ, _, diff = getall(optimizer)
 
-    sz = size(x)
+    (ax1,ax2) = axes(x)
 
-    @inbounds for k2 in 1:sz[2]
-        @inbounds for k1 in 1:sz[1]
+    @turbo for k1 in ax1
+        for k2 in ax2
 
             # perform accelerated gradient step
             diff[k1,k2] = λ*∇[k1,k2]

@@ -46,7 +46,7 @@ function forward!(layer::MvAdditiveLayer)
         # set input of current function (custom to prevent allocs)
         current_f_input = current_f.input
         current_f_dim   = current_f.dim_in
-        @inbounds for ki in 1:current_f_dim
+        @turbo for ki in 1:current_f_dim
             current_f_input[ki] = input[ki + ind]
         end
 
@@ -54,7 +54,7 @@ function forward!(layer::MvAdditiveLayer)
         current_f_output = forward!(current_f)::Vector{Float64}
 
         # process current output
-        @inbounds for ki in 1:current_f_dim
+        @turbo for ki in 1:current_f_dim
             output[ki+current_f_dim+ind] += current_f_output[ki]
         end
 
@@ -91,7 +91,7 @@ function propagate_error!(layer::MvAdditiveLayer)
 
         # set gradient outputs of current function (custom to prevent allocs)
         current_f_gradient_output = current_f.gradient_output
-        @inbounds for ki in 1:current_f_dim
+        @turbo for ki in 1:current_f_dim
             current_f_gradient_output[ki] = gradient_output[ki + current_f_dim + ind]
         end
 
@@ -99,7 +99,7 @@ function propagate_error!(layer::MvAdditiveLayer)
         current_f_gradient_input = propagate_error!(current_f)::Vector{Float64}
 
         # process current gradient input
-        @inbounds for ki in 1:current_f_dim
+        @turbo for ki in 1:current_f_dim
             gradient_input[ki+ind] += current_f_gradient_input[ki]
         end
         

@@ -10,7 +10,7 @@ function setinput!(f, input::AbstractVector; check::Bool=true)
     end
 
     # set input
-    @inbounds for k in 1:len
+    @turbo for k in 1:len
         f_input[k] = input[k]
     end
 
@@ -35,7 +35,7 @@ function setoutput!(f, output::AbstractVector; check::Bool=true)
     end
 
     # set output
-    @inbounds for k in 1:len
+    @turbo for k in 1:len
         f_output[k] = output[k]
     end
 
@@ -60,7 +60,7 @@ function setgradientinput!(f, gradient_input::AbstractVector; check::Bool=true)
     end
 
     # set gradient input
-    @inbounds for k in 1:len
+    @turbo for k in 1:len
         f_gradient_input[k] = gradient_input[k]
     end
 
@@ -85,7 +85,7 @@ function setgradientoutput!(f, gradient_output::AbstractVector; check::Bool=true
     end
 
     # set gradient output
-    @inbounds for k in 1:len
+    @turbo for k in 1:len
         f_gradient_output[k] = gradient_output[k]
     end
 

@@ -80,7 +80,7 @@ function update!(x::Parameter{<:AbstractVector, <:AbstractOptimizer})
         len = length(gradient)
 
         # normalize gradient
-        @inbounds for k in 1:len
+        @turbo for k in 1:len
             gradient[k] *= ibatch_size
         end
 
@@ -88,7 +88,7 @@ function update!(x::Parameter{<:AbstractVector, <:AbstractOptimizer})
         update!(x.value, x.optimizer, x.gradient)
 
         # reset gradient and batch_counter
-        @inbounds for k in 1:len
+        @turbo for k in 1:len
             gradient[k] = 0.0
         end
         x.it = 0
@@ -107,11 +107,11 @@ function update!(x::Parameter{<:AbstractMatrix, <:AbstractOptimizer})
 
         # fetch parameters
         gradient = x.gradient
-        sz = size(gradient)
+        (ax1, ax2) = axes(gradient)
 
         # normalize gradient
-        @inbounds for k2 in 1:sz[2]
-            @inbounds for k1 in 1:sz[1]
+        @turbo for k1 in ax1
+            for k2 in ax2
                 gradient[k1,k2] *= ibatch_size
             end
         end
@@ -120,8 +120,8 @@ function update!(x::Parameter{<:AbstractMatrix, <:AbstractOptimizer})
         update!(x.value, x.optimizer, x.gradient)
 
         # reset gradient and batch_counter
-        @inbounds for k2 in 1:sz[2]
-            @inbounds for k1 in 1:sz[1]
+        @turbo for k1 in ax1
+            for k2 in ax2
                 gradient[k1,k2] = 0.0
             end
         end

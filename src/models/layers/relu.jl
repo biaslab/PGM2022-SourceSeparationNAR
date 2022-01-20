@@ -18,7 +18,7 @@ function forward!(layer::ReluLayer)
     output = layer.output
 
     # update output of layer
-    @inbounds for k = 1:dim
+    @turbo for k = 1:dim
         output[k] = relu(input[k])
     end
 
@@ -36,8 +36,9 @@ function propagate_error!(layer::ReluLayer)
     gradient_input  = layer.gradient_input
 
     # update input gradient of layer
-    @inbounds for k = 1:dim
-        gradient_input[k] = drelu(input[k]) * gradient_output[k]
+    @turbo for k = 1:dim
+        # gradient_input[k] = drelu(input[k]) * gradient_output[k]
+        gradient_input[k] = !signbit(input[k]) * gradient_output[k]
     end
 
     # return gradient input 

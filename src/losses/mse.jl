@@ -9,7 +9,7 @@ function loss(::MSE, true_value::T, predicted_value::T) where { T <: AbstractVec
     @assert len == length(predicted_value)
 
     mse = 0.0
-    for k = 1:len
+    @inbounds for k = 1:len
         mse += abs2(true_value[k] - predicted_value[k])
     end
     mse /= len
@@ -30,7 +30,7 @@ function dloss(::MSE, true_value::T, predicted_value::T) where { T <: AbstractVe
 end
 
 function dloss!(::MSE, dloss::T, true_value::T, predicted_value::T) where { T <: AbstractVector }
-    for k = 1:length(true_value)
+    @inbounds for k = 1:length(true_value)
         dloss[k] = 2*(predicted_value[k] - true_value[k])
     end
     return dloss

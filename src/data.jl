@@ -4,7 +4,7 @@ export prepare_data
 using Statistics
 using Distributed
 using FileIO
-using ProgressMeter
+using ProgressMeter: @showprogress
 using DSP
 using HDF5
 using Random
@@ -46,7 +46,7 @@ function prepare_data(input_folder::String, output_folder::String; fs::Int64=160
         mkdir(output_folder)
 
         # create filter bank
-        ProgressMeter.@showprogress for (ind, file) in enumerate(filenames)
+        @showprogress for (ind, file) in enumerate(filenames)
 
             
             # load data
@@ -378,27 +378,27 @@ function Base.size(d::Data, id::Int64)
 end
 
 
-function Base.iterate(x::Data, state=1; item="data"::String)
-    count = state
+# function Base.iterate(x::Data, state=1; item="data"::String)
+#     count = state
 
-    if(count > length(x.list))
-        return nothing
-    else
-        return (getindex(x, count, item), count+1, item)
-    end
-end
+#     if(count > length(x.list))
+#         return nothing
+#     else
+#         return (getindex(x, count, item), count+1, item)
+#     end
+# end
 
 
-function Base.collect(data::Data, item::String)
-    x = []
-    next = iterate(data, item=item)
-    while next !== nothing
-        (i, state, _) = next
-        push!(x, i)
-        next = iterate(data, state; item=item)
-    end
-    return hcat(x...)
-end
+# function Base.collect(data::Data, item::String)
+#     x = []
+#     next = iterate(data, item=item)
+#     while next !== nothing
+#         (i, state, _) = next
+#         push!(x, i)
+#         next = iterate(data, state; item=item)
+#     end
+#     return hcat(x...)
+# end
 
 """
 This function squeezes an array and removes its singleton dimensions.

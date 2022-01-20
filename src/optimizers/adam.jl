@@ -79,7 +79,7 @@ function update!(x::T, optimizer::Adam{ T }, ∇::T) where { T <: AbstractVector
     ditρ1 = 1.0 / (1.0 - itρ1)
     ditρ2 = 1.0 / (1.0 - itρ2)
 
-     @inbounds for k in 1:length(x)
+    @turbo for k in 1:length(x)
 
         # update (biased) first moment
         s[k] = ρ1*s[k] + iρ1*∇[k]
@@ -120,10 +120,10 @@ function update!(x::T, optimizer::Adam{ T }, ∇::T) where { T <: AbstractMatrix
     iρ2  = 1.0 - ρ2
     ditρ2 = 1.0/(1.0 - itρ2)
 
-    sz = size(x)
+    (ax1, ax2) = axes(x)
 
-    @inbounds for k2 in 1:sz[2]
-        @inbounds for k1 in 1:sz[1]
+    @turbo for k1 in ax1
+        for k2 in ax2
 
             # tmp access
             ∇k1k2 = ∇[k1,k2]
