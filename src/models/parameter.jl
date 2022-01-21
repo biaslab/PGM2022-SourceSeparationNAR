@@ -4,18 +4,16 @@ mutable struct Parameter{T, O <: AbstractOptimizer}
     value      :: T
     gradient   :: T
     optimizer  :: O
-    batch_size :: Int64
-    it         :: Int64
 end
 
-Parameter(value::T, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real } = Parameter(value, zero(T), optimizer(), batch_size, 0)
-function Parameter(value::AbstractVector{T}, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real }
+Parameter(value::T, optimizer::Type{<:AbstractOptimizer}) where { T <: Real } = Parameter(value, zero(T), optimizer())
+function Parameter(value::AbstractVector{T}, optimizer::Type{<:AbstractOptimizer}) where { T <: Real }
     dim = length(value)
-    return Parameter(value, zeros(T, dim), optimizer(dim), batch_size, 0)
+    return Parameter(value, zeros(T, dim), optimizer(dim))
 end
-function Parameter(value::AbstractMatrix{T}, optimizer::Type{<:AbstractOptimizer}; batch_size::Int64=128) where { T <: Real }
+function Parameter(value::AbstractMatrix{T}, optimizer::Type{<:AbstractOptimizer}) where { T <: Real }
     sz = size(value)
-    return Parameter(value, zeros(T, sz), optimizer(sz), batch_size, 0)
+    return Parameter(value, zeros(T, sz), optimizer(sz))
 end
 
 # arithmetic operators
@@ -44,97 +42,8 @@ end
 length(x::Parameter) = length(x.value)
 size(x::Parameter) = size(x.value)
 
-function update!(x::Parameter{<:Real, <:AbstractOptimizer})
-
-    # update batch counter
-    x.it += 1
-    batch_size = x.batch_size
-
-    # if batch size is reached
-    if x.it == batch_size
-
-        # normalize gradient
-        x.gradient /= batch_size
-
-        # update value
-        x.value = update!(x.value, x.optimizer, x.gradient)
-
-        # reset gradient and batch counter
-        x.gradient = 0.0
-        x.it = 0
-
-    end
-
-end
-function update!(x::Parameter{<:AbstractVector, <:AbstractOptimizer})
-
-    # update batch counter
-    x.it += 1
-    ibatch_size = 1/x.batch_size
-
-    # if batch size is reached
-    if x.it == x.batch_size
-
-        # fetch parameters
-        gradient = x.gradient
-        len = length(gradient)
-
-        # normalize gradient
-        @turbo for k in 1:len
-            gradient[k] *= ibatch_size
-        end
-
-        # update value
-        update!(x.value, x.optimizer, x.gradient)
-
-        # reset gradient and batch_counter
-        @turbo for k in 1:len
-            gradient[k] = 0.0
-        end
-        x.it = 0
-
-    end
-
-end
-function update!(x::Parameter{<:AbstractMatrix, <:AbstractOptimizer})
-
-    # update batch counter
-    x.it += 1
-    ibatch_size = 1/x.batch_size
-
-    # if batch size is reached
-    if x.it == x.batch_size
-
-        # fetch parameters
-        gradient = x.gradient
-        (ax1, ax2) = axes(gradient)
-
-        # normalize gradient
-        @turbo for k1 in ax1
-            for k2 in ax2
-                gradient[k1,k2] *= ibatch_size
-            end
-        end
-
-        # update value
-        update!(x.value, x.optimizer, x.gradient)
-
-        # reset gradient and batch_counter
-        @turbo for k1 in ax1
-            for k2 in ax2
-                gradient[k1,k2] = 0.0
-            end
-        end
-        x.it = 0
-
-    end
-
-end
+update!(x::Parameter) = update!(x.value, x.optimizer, x.gradient)
 
 function setlr!(x::Parameter, lr)
     x.optimizer.λ = lr
-end
-
-function setbatchsize!(x::Parameter, batch_size::Int64)
-    x.batch_size = batch_size
 end

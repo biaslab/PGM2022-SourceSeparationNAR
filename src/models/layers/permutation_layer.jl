@@ -1,23 +1,23 @@
 mutable struct PermutationLayer{T <: Real} <: AbstractLayer
     dim_in          :: Int64
     P               :: PermutationMatrix
-    input           :: Vector{T}
-    output          :: Vector{T}
-    gradient_input  :: Vector{T}
-    gradient_output :: Vector{T}
+    input           :: Matrix{T}
+    output          :: Matrix{T}
+    gradient_input  :: Matrix{T}
+    gradient_output :: Matrix{T}
 end
-function PermutationLayer(dim::Int)
-    return PermutationLayer(dim, PermutationMatrix(dim))
+function PermutationLayer(dim::Int; batch_size::Int64=128)
+    return PermutationLayer(dim, PermutationMatrix(dim); batch_size=batch_size)
 end
-function PermutationLayer(dim::Int, P::PermutationMatrix)
-    return PermutationLayer(dim, P, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+function PermutationLayer(dim::Int, P::PermutationMatrix; batch_size::Int64=128)
+    return PermutationLayer(dim, P, zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size))
 end
 
 function forward!(layer::PermutationLayer)
     
     # calculate output of layer
-    input = layer.input
-    output = layer.output
+    input = getmatinput(layer)
+    output = getmatoutput(layer)
     mul!(output, layer.P, input)
 
     # return output 
@@ -28,8 +28,8 @@ end
 function propagate_error!(layer::PermutationLayer)
 
     # copy input in layer
-    gradient_output = layer.gradient_output
-    gradient_input  = layer.gradient_input
+    gradient_input  = getmatgradientinput(layer)
+    gradient_output = getmatgradientoutput(layer)
     
     # calculate output of layer
     mulT!(gradient_input, layer.P, gradient_output) # mul!(gradient_input, P', ∂L_∂y)
@@ -39,12 +39,10 @@ function propagate_error!(layer::PermutationLayer)
 
 end
 
-update!(layer::PermutationLayer) = return
+update!(::PermutationLayer) = return
 
-setlr!(layer::PermutationLayer, lr) = return
+setlr!(::PermutationLayer, lr) = return
 
-setbatchsize!(layer::PermutationLayer, batch_size) = return
+isinvertible(::PermutationLayer) = true
 
-isinvertible(layer::PermutationLayer) = true
-
-nr_params(layer::PermutationLayer) = 0
+nr_params(::PermutationLayer) = 0

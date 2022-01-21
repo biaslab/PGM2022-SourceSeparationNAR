@@ -1,97 +1,93 @@
-function setinput!(f, input::AbstractVector; check::Bool=true)
+using LoopVectorization: @turbo
+
+getmatinput(f)  = getmat(f.input)
+getmatoutput(f) = getmat(f.output)
+getmatgradientinput(f) = getmat(f.gradient_input)
+getmatgradientoutput(f) = getmat(f.gradient_output)
+getmat(A::AbstractArray) = A
+
+function copytoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
     
     # fetch input
-    f_input = f.input
+    f_input = getmatinput(f)
 
     # assert dimensionality
-    len = length(f_input)
     if check
-        @assert len == length(input)
+        @assert axes(f_input) == axes(input)
     end
 
     # set input
-    @turbo for k in 1:len
-        f_input[k] = input[k]
-    end
+    @turbo f_input .= input
 
 end
 
-function setinput!(f, input::T) where { T <: Real }
+function copytoinput!(f, input::T) where { T <: Real }
     
     # set input
     f.input = input
 
 end
 
-function setoutput!(f, output::AbstractVector; check::Bool=true)
+function copytooutput!(f, output::T; check::Bool=true) where { T <: AbstractMatrix }
     
     # fetch output
-    f_output = f.output
+    f_output = getmatoutput(f)
 
     # assert dimensionality
-    len = length(f_output)
     if check
-        @assert len == length(output)
+        @assert axes(f_output) == axes(output)
     end
 
     # set output
-    @turbo for k in 1:len
-        f_output[k] = output[k]
-    end
+    @turbo f_output .= output
 
 end
 
-function setoutput!(f, output::T) where { T <: Real }
+function copytooutput!(f, output::T) where { T <: Real }
     
     # set output
     f.output = output
 
 end
 
-function setgradientinput!(f, gradient_input::AbstractVector; check::Bool=true)
+function copytogradientinput!(f, gradient_input::T; check::Bool=true) where { T <: AbstractMatrix }
     
     # fetch gradient input
-    f_gradient_input = f.gradient_input
+    f_gradient_input = getmatgradientinput(f)
 
     # assert dimensionality
-    len = length(f_gradient_input)
     if check
-        @assert len == length(gradient_input)
+        @assert axes(f_gradient_input) == axes(gradient_input)
     end
 
     # set gradient input
-    @turbo for k in 1:len
-        f_gradient_input[k] = gradient_input[k]
-    end
+    @turbo f_gradient_input .= gradient_input
 
 end
 
-function setgradientinput!(f, gradient_input::T) where { T <: Real }
+function copytogradientinput!(f, gradient_input::T) where { T <: Real }
     
     # set gradient input
     f.gradient_input = gradient_input
 
 end
 
-function setgradientoutput!(f, gradient_output::AbstractVector; check::Bool=true)
+function copytogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractMatrix }
     
     # fetch gradient output
-    f_gradient_output = f.gradient_output
+    f_gradient_output = getmatgradientoutput(f)
 
     # assert dimensionality
-    len = length(f_gradient_output)
     if check
-        @assert len == length(gradient_output)
+        @assert axes(f_gradient_output) == axes(gradient_output)
     end
 
     # set gradient output
-    @turbo for k in 1:len
-        f_gradient_output[k] = gradient_output[k]
-    end
+    @turbo f_gradient_output .= gradient_output
 
 end
 
-function setgradientoutput!(f, gradient_output::T) where { T <: Real }
+function copytogradientoutput!(f, gradient_output::T) where { T <: Real }
     
     # set gradient output
     f.gradient_output = gradient_output

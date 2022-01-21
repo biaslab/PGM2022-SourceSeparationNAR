@@ -1,25 +1,27 @@
 mutable struct ReluLayer{T <: Real} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    input           :: Vector{T}
-    output          :: Vector{T}
-    gradient_input  :: Vector{T}
-    gradient_output :: Vector{T}
+    input           :: Matrix{T}
+    output          :: Matrix{T}
+    gradient_input  :: Matrix{T}
+    gradient_output :: Matrix{T}
 end
-function ReluLayer(dim)
-    return ReluLayer(dim, dim, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+function ReluLayer(dim; batch_size::Int64=128)
+    return ReluLayer(dim, dim, zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
 end
 
 function forward!(layer::ReluLayer) 
     
     # fetch input and output in layer
-    dim    = layer.dim_in
-    input  = layer.input
-    output = layer.output
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    (ax1, ax2) = axes(input)
 
     # update output of layer
-    @turbo for k = 1:dim
-        output[k] = relu(input[k])
+    @turbo for k1 in ax1
+        for k2 in ax2
+            output[k1,k2] = relu(input[k1,k2])
+        end
     end
 
     # return output 
@@ -30,15 +32,16 @@ end
 function propagate_error!(layer::ReluLayer) 
     
     # fetch input and output gradients in layer
-    dim             = layer.dim_in
-    input           = layer.input
-    gradient_output = layer.gradient_output
-    gradient_input  = layer.gradient_input
+    input           = getmatinput(layer)
+    gradient_input  = getmatgradientinput(layer)
+    gradient_output = getmatgradientoutput(layer)
+    (ax1, ax2) = axes(input)
 
     # update input gradient of layer
-    @turbo for k = 1:dim
-        # gradient_input[k] = drelu(input[k]) * gradient_output[k]
-        gradient_input[k] = !signbit(input[k]) * gradient_output[k]
+    @turbo for k1 in ax1
+        for k2 in ax2
+            gradient_input[k1,k2] = !signbit(input[k1,k2]) * gradient_output[k1,k2]
+        end
     end
 
     # return gradient input 
@@ -46,15 +49,13 @@ function propagate_error!(layer::ReluLayer)
     
 end
 
-update!(layer::ReluLayer) = return
+update!(::ReluLayer) = return
 
-setlr!(layer::ReluLayer, lr) = return
+setlr!(::ReluLayer, lr) = return
 
-setbatchsize!(layer::ReluLayer, batch_size) = return
+isinvertible(::ReluLayer) = false
 
-isinvertible(layer::ReluLayer) = false
-
-nr_params(layer::ReluLayer) = 0
+nr_params(::ReluLayer) = 0
 
 relu(x) = max(0.0, x)
 drelu(x) = x > 0 ? 1.0 : 0.0

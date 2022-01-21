@@ -23,7 +23,6 @@ end
 
 getall(optimizer::Adam) = return optimizer.s, optimizer.r, optimizer.shat, optimizer.rhat, optimizer.ρ1, optimizer.ρ2, optimizer.itρ1, optimizer.itρ2, optimizer.λ, optimizer.it, optimizer.diff
 
-
 function update!(x::T, optimizer::Adam{ T }, ∇::T) where { T <: Real }
 
     # fetch parameters

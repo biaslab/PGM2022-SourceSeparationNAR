@@ -2,12 +2,12 @@ mutable struct MvAdditiveLayer{L <: Tuple, T <: Real} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: L
-    input           :: Vector{T}
-    output          :: Vector{T}
-    gradient_input  :: Vector{T}
-    gradient_output :: Vector{T}
+    input           :: Matrix{T}
+    output          :: Matrix{T}
+    gradient_input  :: Matrix{T}
+    gradient_output :: Matrix{T}
 end
-function MvAdditiveLayer(dim::Int, f::L) where { L <: Tuple}
+function MvAdditiveLayer(dim::Int, f::L; batch_size::Int64=128) where { L <: Tuple}
     for k in length(f)-1
         @assert f[k+1].dim_in == f[k].dim_out
     end
@@ -16,11 +16,11 @@ function MvAdditiveLayer(dim::Int, f::L) where { L <: Tuple}
         ind += fk.dim_in 
     end
     @assert ind + f[end].dim_out == dim
-    return MvAdditiveLayer(dim, dim, f, zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+    return MvAdditiveLayer(dim, dim, f, zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size))
 end
-function MvAdditiveLayer(dim::Int, f)
+function MvAdditiveLayer(dim::Int, f; batch_size::Int64=128)
     @assert f.dim_in + f.dim_out == dim
-    return MvAdditiveLayer(dim, dim, (f,), zeros(dim), zeros(dim), zeros(dim), zeros(dim))
+    return MvAdditiveLayer(dim, dim, (f,), zeros(dim, batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
 end
 
 function forward!(layer::MvAdditiveLayer)
@@ -28,7 +28,8 @@ function forward!(layer::MvAdditiveLayer)
     # set output of layer (the additive component)
     input  = layer.input
     output = layer.output
-    setoutput!(layer, input)
+    copytooutput!(layer, input)
+    batch_size = size(input,2)
     
     # fetch coupling functions
     f     = layer.f
@@ -46,16 +47,20 @@ function forward!(layer::MvAdditiveLayer)
         # set input of current function (custom to prevent allocs)
         current_f_input = current_f.input
         current_f_dim   = current_f.dim_in
-        @turbo for ki in 1:current_f_dim
-            current_f_input[ki] = input[ki + ind]
+        @turbo for k1 in 1:current_f_dim
+            for k2 in 1:batch_size
+                current_f_input[k1,k2] = input[k1 + ind,k2]
+            end
         end
 
         # run current function forward
-        current_f_output = forward!(current_f)::Vector{Float64}
+        current_f_output = forward!(current_f)::Matrix{Float64}
 
         # process current output
-        @turbo for ki in 1:current_f_dim
-            output[ki+current_f_dim+ind] += current_f_output[ki]
+        @turbo for k1 in 1:current_f_dim
+            for k2 in 1:batch_size
+                output[k1+current_f_dim+ind,k2] += current_f_output[k1,k2]
+            end
         end
 
         # update index
@@ -71,9 +76,10 @@ end
 function propagate_error!(layer::MvAdditiveLayer)
 
     # set gradient input of layer (the additive component)
-    gradient_input  = layer.gradient_input
-    gradient_output = layer.gradient_output
-    setgradientinput!(layer, gradient_output)
+    gradient_input  = getmatgradientinput(layer)
+    gradient_output = getmatgradientoutput(layer)
+    copytogradientinput!(layer, gradient_output)
+    batch_size = size(gradient_input,2)
     
     # fetch partition dimension
     f     = layer.f
@@ -90,17 +96,21 @@ function propagate_error!(layer::MvAdditiveLayer)
         current_f_dim = current_f.dim_in
 
         # set gradient outputs of current function (custom to prevent allocs)
-        current_f_gradient_output = current_f.gradient_output
-        @turbo for ki in 1:current_f_dim
-            current_f_gradient_output[ki] = gradient_output[ki + current_f_dim + ind]
+        current_f_gradient_output = getmatgradientoutput(current_f)
+        @turbo for k1 in 1:current_f_dim
+            for k2 in 1:batch_size
+                current_f_gradient_output[k1,k2] = gradient_output[k1 + current_f_dim + ind,k2]
+            end
         end
 
         # run current function error backward
-        current_f_gradient_input = propagate_error!(current_f)::Vector{Float64}
+        current_f_gradient_input = propagate_error!(current_f)::Matrix{Float64}
 
         # process current gradient input
-        @turbo for ki in 1:current_f_dim
-            gradient_input[ki+ind] += current_f_gradient_input[ki]
+        @turbo for k1 in 1:current_f_dim
+            for k2 in 1:batch_size
+                gradient_input[k1+ind,k2] += current_f_gradient_input[k1,k2]
+            end
         end
         
         # update index
@@ -137,18 +147,6 @@ function setlr!(layer::MvAdditiveLayer, lr)
     
 end
 
-function setbatchsize!(layer::MvAdditiveLayer, batch_size::Int64)
-    
-    # fetch functions
-    f = layer.f
-
-    # update parameters in functions
-    @inbounds for fk in f
-        setbatchsize!(fk, batch_size)
-    end
-    
-end
-
-isinvertible(layer::MvAdditiveLayer) = true
+isinvertible(::MvAdditiveLayer) = true
 
 nr_params(layer::MvAdditiveLayer) = mapreduce(nr_params, +, layer.f)

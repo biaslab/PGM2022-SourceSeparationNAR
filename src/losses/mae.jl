@@ -1,37 +1,34 @@
-struct MAE <: AbstractLoss end
-
-function loss(::MAE, true_value::T, predicted_value::T) where { T <: Real }
-    return abs(true_value, predicted_value)
+struct MAE{T} <: AbstractLoss
+    loss :: Vector{T}
+end
+function MAE(; batch_size::Int=128)
+    MAE(zeros(batch_size))
 end
 
-function loss(::MAE, true_value::T, predicted_value::T) where { T <: AbstractVector }
-    len = length(true_value)
-    @assert len == length(predicted_value)
+function calculate_loss!(mae::MAE, true_output::T1, predicted_output::T2) where { T1 <: AbstractMatrix, T2 <: AbstractMatrix }
+    (ax1, ax2) = axes(true_output)
+    @assert (ax1, ax2) == axes(predicted_output)
 
-    mse = 0.0
-    for k = 1:len
-        mse += abs(true_value[k] - predicted_value[k])
+    loss = mae.loss
+    idim = 1/length(ax1)
+
+    @turbo for k2 in ax2
+        loss[k2] = 0
+        for k1 in ax1
+            loss[k2] += abs(predicted_output[k1,k2] - true_output[k1,k2]) * idim
+        end
     end
-    mse /= len
-    return mse
+    return loss
 end
 
+function calculate_dloss!(::MAE, dloss::T1, true_output::T2, predicted_output::T3) where { T1 <: AbstractMatrix, T2 <: AbstractMatrix, T3 <: AbstractMatrix }
+    (ax1, ax2) = axes(true_output)
+    @assert (ax1, ax2) == axes(predicted_output)
 
-function dloss(::MAE, true_value::T, predicted_value::T) where { T <: Real }
-    return sign(predicted_value - true_value)
-end
-
-function dloss(::MAE, true_value::T, predicted_value::T) where { T <: AbstractVector }
-    len = length(true_value)
-    @assert len == length(predicted_value)
-
-    dloss = Vector{T}(undef, len)
-    return dloss!(Type{MAE}, dloss, true_value, predicted_value)
-end
-
-function dloss!(::MAE, dloss::T, true_value::T, predicted_value::T) where { T <: AbstractVector }
-    for k = 1:length(true_value)
-        dloss[k] = sign(predicted_value[k] - true_value[k])
+    @turbo for k1 in ax1
+        for k2 in ax2
+            dloss[k1,k2] = sign(predicted_output[k1,k2] - true_output[k1,k2])
+        end
     end
     return dloss
 end

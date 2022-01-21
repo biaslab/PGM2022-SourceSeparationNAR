@@ -2,45 +2,44 @@ using StatsFuns: softmax!
 
 import Base: length, size, getindex, setindex!
 
-mutable struct SoftmaxOutput{T <: Real} <: AbstractVector{T}
-    value :: Vector{T}
+mutable struct SoftmaxOutput{T <: Real} <: AbstractMatrix{T}
+    mat :: Matrix{T}
 end
-Base.length(x::SoftmaxOutput) = length(x.value)
-Base.size(x::SoftmaxOutput) = size(x.value)
-Base.getindex(x::SoftmaxOutput, i::Int) = x.value[i]
-Base.setindex!(x::SoftmaxOutput, y, i::Int) = (x.value[i] = y)
+Base.length(x::SoftmaxOutput) = length(x.mat)
+Base.size(x::SoftmaxOutput) = size(x.mat)
+Base.getindex(x::SoftmaxOutput, i, ii) = x.mat[i,ii]
+Base.setindex!(x::SoftmaxOutput, y, i, ii) = (x.mat[i,ii] = y)
+getmat(A::SoftmaxOutput) = A.mat
 
-mutable struct SoftmaxGradientOutput{T <: Real} <: AbstractVector{T}
-    value :: Vector{T}
+mutable struct SoftmaxGradientOutput{T <: Real} <: AbstractMatrix{T}
+    mat :: Matrix{T}
 end
-Base.length(x::SoftmaxGradientOutput) = length(x.value)
-Base.size(x::SoftmaxGradientOutput) = size(x.value)
-Base.getindex(x::SoftmaxGradientOutput, i::Int) = x.value[i]
-Base.setindex!(x::SoftmaxGradientOutput, y, i::Int) = (x.value[i] = y)
+Base.length(x::SoftmaxGradientOutput) = length(x.mat)
+Base.size(x::SoftmaxGradientOutput) = size(x.mat)
+Base.getindex(x::SoftmaxGradientOutput, i, ii) = x.mat[i,ii]
+Base.setindex!(x::SoftmaxGradientOutput, y, i, ii) = (x.mat[i,ii] = y)
+getmat(A::SoftmaxGradientOutput) = A.mat
 
 mutable struct SoftmaxLayer{T <: Real} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    input           :: Vector{T}
+    input           :: Matrix{T}
     output          :: SoftmaxOutput{T}
-    gradient_input  :: Vector{T}
+    gradient_input  :: Matrix{T}
     gradient_output :: SoftmaxGradientOutput{T}
 end
-function SoftmaxLayer(dim)
-    return SoftmaxLayer(dim, dim, zeros(dim), SoftmaxOutput(zeros(dim)), zeros(dim), SoftmaxGradientOutput(zeros(dim)))
+function SoftmaxLayer(dim; batch_size::Int64=128)
+    return SoftmaxLayer(dim, dim, zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size)))
 end
 
 function forward!(layer::SoftmaxLayer) 
     
     # fetch input and output in layer
-    dim    = layer.dim_in
-    input  = layer.input
-    output = layer.output.value
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
 
     # update output of layer
-    @turbo for k = 1:dim
-        output[k] = input[k]
-    end
+    @turbo output .= input
     # softmax!(output) # for numerical stability use custom vector type instead.
 
     # return output 
@@ -51,16 +50,18 @@ end
 function propagate_error!(layer::SoftmaxLayer) 
     
     # fetch input and output gradients in layer
-    dim             = layer.dim_in
-    input           = layer.input
-    output          = layer.output.value
-    gradient_output = layer.gradient_output.value
-    gradient_input  = layer.gradient_input
+    input           = getmatinput(layer)
+    output          = getmatoutput(layer)
+    gradient_input  = getmatgradientinput(layer)
+    gradient_output = getmatgradientoutput(layer)
+    (ax1, ax2) = axes(input)
 
     # update input gradient of layer
-    Z = logsumexp(output)
-    @turbo for k = 1:dim
-        gradient_input[k] = exp(output[k] - Z) + gradient_output[k] # compensate for the factor output[k] with loss function
+    @turbo for k2 in ax2
+        Z = logsumexp_column(output, k2)
+        for k1 in ax1
+            gradient_input[k1,k2] = exp(output[k1,k2] - Z) + gradient_output[k1,k2] # compensate for the factor output[k] with loss function
+        end
     end
 
     # return gradient input 
@@ -68,12 +69,10 @@ function propagate_error!(layer::SoftmaxLayer)
     
 end
 
-update!(layer::SoftmaxLayer) = return
+update!(::SoftmaxLayer) = return
 
-setlr!(layer::SoftmaxLayer, lr) = return
+setlr!(::SoftmaxLayer, lr) = return
 
-setbatchsize!(layer::SoftmaxLayer, batch_size) = return
+isinvertible(::SoftmaxLayer) = false
 
-isinvertible(layer::SoftmaxLayer) = false
-
-nr_params(layer::SoftmaxLayer) = 0
+nr_params(::SoftmaxLayer) = 0
