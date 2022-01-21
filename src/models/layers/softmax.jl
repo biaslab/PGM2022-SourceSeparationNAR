@@ -32,6 +32,13 @@ function SoftmaxLayer(dim; batch_size::Int64=128)
     return SoftmaxLayer(dim, dim, zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size)))
 end
 
+function setoutput!(f::SoftmaxLayer, output)
+    f.output.mat = output
+end
+function setgradientoutput!(f::SoftmaxLayer, gradient_output)
+    f.gradient_output.mat = gradient_output
+end
+
 function forward!(layer::SoftmaxLayer) 
     
     # fetch input and output in layer

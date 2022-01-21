@@ -67,8 +67,8 @@ function forward!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
     @inbounds for layer in layers
 
         # set input in layer
-        copytoinput!(layer, current_input)
-
+        linktoinput!(layer, current_input)
+        
         # run current layer forward
         current_input = forward!(layer)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
@@ -107,7 +107,7 @@ function propagate_error!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 
     @inbounds for layer in reverse(layers)
 
         # set gradient output in layer
-        copytogradientoutput!(layer, current_gradient_output)
+        linktogradientoutput!(layer, current_gradient_output)
 
         # run current layer forward
         current_gradient_output = propagate_error!(layer)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore

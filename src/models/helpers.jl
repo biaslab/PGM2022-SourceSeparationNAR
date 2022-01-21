@@ -1,10 +1,19 @@
 using LoopVectorization: @turbo
 
-getmatinput(f)  = getmat(f.input)
-getmatoutput(f) = getmat(f.output)
-getmatgradientinput(f) = getmat(f.gradient_input)
-getmatgradientoutput(f) = getmat(f.gradient_output)
-getmat(A::AbstractArray) = A
+getinput(f)                 = f.input
+getoutput(f)                = f.output
+getgradientinput(f)         = f.gradient_input
+getgradientoutput(f)        = f.gradient_output
+getmatinput(f)              = getmat(getinput(f))
+getmatoutput(f)             = getmat(getoutput(f))
+getmatgradientinput(f)      = getmat(getgradientinput(f))
+getmatgradientoutput(f)     = getmat(getgradientoutput(f))
+getmat(A::AbstractArray)    = A
+
+setinput!(f, input)                     = f.input = input
+setoutput!(f, output)                   = f.output = output
+setgradientinput!(f, gradient_input)    = f.gradient_input = gradient_input
+setgradientoutput!(f, gradient_output)  = f.gradient_output = gradient_output
 
 function copytoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
     
@@ -25,6 +34,21 @@ function copytoinput!(f, input::T) where { T <: Real }
     
     # set input
     f.input = input
+
+end
+
+function linktoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
+    
+    # fetch input
+    f_input = getinput(f)
+
+    # assert dimensionality
+    if check
+        @assert axes(f_input) == axes(input)
+    end
+
+    # set input
+    setinput!(f, input)
 
 end
 
@@ -91,5 +115,20 @@ function copytogradientoutput!(f, gradient_output::T) where { T <: Real }
     
     # set gradient output
     f.gradient_output = gradient_output
+
+end
+
+function linktogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractMatrix }
+    
+    # fetch gradient output
+    f_gradient_output = getmatgradientoutput(f)
+
+    # assert dimensionality
+    if check
+        @assert axes(f_gradient_output) == axes(gradient_output)
+    end
+
+    # set gradient output
+    setgradientoutput!(f, gradient_output)
 
 end
