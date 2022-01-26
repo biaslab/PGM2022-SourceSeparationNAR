@@ -90,3 +90,10 @@ end
 isinvertible(layer::DenseLayer) = false
 
 nr_params(layer::DenseLayer) = length(layer.W) + length(layer.b)
+
+function print_info(layer::DenseLayer, level::Int, io)
+
+    # print layer
+    write(io, string(["--" for _=1:level]..., " Dense(", layer.dim_in, ", ", layer.dim_out, ")\n"))
+
+end

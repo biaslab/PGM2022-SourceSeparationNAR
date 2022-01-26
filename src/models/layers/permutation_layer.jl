@@ -46,3 +46,10 @@ setlr!(::PermutationLayer, lr) = return
 isinvertible(::PermutationLayer) = true
 
 nr_params(::PermutationLayer) = 0
+
+function print_info(layer::PermutationLayer, level::Int, io)
+
+    # print layer
+    write(io, string(["--" for _=1:level]..., " PermutationLayer(", layer.dim_in, ")\n"))
+
+end

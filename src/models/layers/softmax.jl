@@ -83,3 +83,10 @@ setlr!(::SoftmaxLayer, lr) = return
 isinvertible(::SoftmaxLayer) = false
 
 nr_params(::SoftmaxLayer) = 0
+
+function print_info(layer::SoftmaxLayer, level::Int, io)
+
+    # print layer
+    write(io, string(["--" for _=1:level]..., " SoftmaxLayer(", layer.dim_in, ")\n"))
+
+end

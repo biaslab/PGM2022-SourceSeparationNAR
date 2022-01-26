@@ -3,7 +3,7 @@ export DenseLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, SoftmaxLayer
 
 export forward!, propagate_error!, update!
 export setlr!, setbatchsize!
-export isinvertible, nr_params
+export isinvertible, nr_params, print_info
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -149,3 +149,28 @@ end
 isinvertible(model::Model) = mapreduce(isinvertible, *, model.layers)
 
 nr_params(model::Model) = mapreduce(nr_params, +, model.layers)
+
+function print_info(model::Model, file::String)
+
+    # open file
+    open(file, "w") do io
+        print_info(model, 0, io)
+    end
+
+end
+
+function print_info(model::Model, level::Int, io)
+
+    # print model info
+    if level == 1
+        write(io, string("Model(", model.dim_in, ", ", model.dim_out, ")\n"))
+    else
+        write(io, string(["--" for _=1:level]..., " Model(", model.dim_in, ", ", model.dim_out, ")\n"))
+    end
+
+    # print layers
+    @inbounds for layer in model.layers
+        print_info(layer, level+1, io)
+    end
+
+end

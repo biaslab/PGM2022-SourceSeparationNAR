@@ -150,3 +150,15 @@ end
 isinvertible(::MvAdditiveLayer) = true
 
 nr_params(layer::MvAdditiveLayer) = mapreduce(nr_params, +, layer.f)
+
+function print_info(layer::MvAdditiveLayer, level::Int, io)
+
+    # print layer
+    write(io, string(["--" for _=1:level]..., " MvAdditiveLayer(", layer.dim_in, ", ", layer.dim_out, ")\n"))
+
+    # loop through coupling functions
+    @inbounds for fk in layer.f
+        print_info(fk, level+1, io)
+    end
+
+end

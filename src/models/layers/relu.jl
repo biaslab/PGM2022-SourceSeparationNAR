@@ -57,5 +57,12 @@ isinvertible(::ReluLayer) = false
 
 nr_params(::ReluLayer) = 0
 
+function print_info(layer::ReluLayer, level::Int, io)
+
+    # print layer
+    write(io, string(["--" for _=1:level]..., " ReluLayer(", layer.dim_in, ")\n"))
+
+end
+
 relu(x) = max(0.0, x)
 drelu(x) = x > 0 ? 1.0 : 0.0
