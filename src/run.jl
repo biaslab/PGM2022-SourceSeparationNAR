@@ -49,6 +49,8 @@ function run!(train_suite::TrainSuite)
     # save model
     save(string(train_suite.log_folder, timestamp, "/model.jld2"), "model", train_suite.model)
 
+    return
+
 end
 
 
@@ -68,7 +70,7 @@ function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
     
     # training: loop through signals
     loss_value_train = 0.0
-    for (index, signal) in enumerate(train_data)
+    for (index, signal::Vector{Float64}) in enumerate(train_data)
 
         # train for signal
         loss_value_train_tmp = train_signal!(model, signal, input, output, loss_function)
@@ -86,7 +88,7 @@ function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
 
     # testing: loop through signals
     loss_value_test = 0.0
-    for signal in test_data
+    for signal::Vector{Float64} in test_data
 
         # train for signal
         loss_value_test += test_signal!(model, signal, input, output, loss_function)
@@ -114,7 +116,7 @@ function train_signal!(model, signal, input, output, loss_function)
     (dim_in, batch_size) = size(model.input)
 
     # specify range
-    rng = 1:length(signal)-2*dim_in*batch_size
+    rng = randperm(length(signal)-2*dim_in*batch_size)
     loss_value_train_tmp = 0.0
     for k in rng
         
