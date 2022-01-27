@@ -5,6 +5,8 @@ function MAE(; batch_size::Int=128)
     MAE(zeros(batch_size))
 end
 
+getid(::MAE) = "mae"
+
 function calculate_loss!(mae::MAE, true_output::T1, predicted_output::T2) where { T1 <: AbstractMatrix, T2 <: AbstractMatrix }
     (ax1, ax2) = axes(true_output)
     @assert (ax1, ax2) == axes(predicted_output)

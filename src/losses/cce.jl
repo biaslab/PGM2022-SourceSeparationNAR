@@ -7,6 +7,8 @@ function CCE(; batch_size::Int=128)
     return CCE(zeros(batch_size))
 end
 
+getid(::CCE) = "cce"
+
 function calculate_loss!(cce::CCE, true_output::T1, predicted_output::T2) where { T1 <: AbstractMatrix, T2 <: AbstractMatrix }
     (ax1, ax2) = axes(true_output)
     @assert (ax1, ax2) == axes(predicted_output)

@@ -5,6 +5,8 @@ function MSE(; batch_size::Int=128)
     MSE(zeros(batch_size))
 end
 
+getid(::MSE) = "mse"
+
 function calculate_loss!(mse::MSE, true_output::T1, predicted_output::T2) where { T1 <: AbstractMatrix, T2 <: AbstractMatrix }
     (ax1, ax2) = axes(true_output)
     @assert (ax1, ax2) == axes(predicted_output)

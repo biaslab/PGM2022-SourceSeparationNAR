@@ -12,8 +12,10 @@ module SourceSeparationNF
 
     include("losses/losses.jl")
 
-    include("train.jl")
+    include("run.jl")
 
     include("data.jl")
+
+    include("log.jl")
 
 end
