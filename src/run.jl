@@ -62,6 +62,9 @@ function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
     model = train_suite.model
     loss_function = train_suite.loss
 
+    # shuffle order of train data
+    shuffle!(train_data.list)
+
     # allocate space for input and output
     input, output = similar(model.input), similar(model.output)
 
@@ -121,8 +124,9 @@ function train_signal!(model, signal, input, output, loss_function)
     for k in rng
         
         # load data
-        input  .= reshape(view(signal, k:k+dim_in*batch_size-1), (dim_in, batch_size))
-        output .= reshape(view(signal, k+dim_in*batch_size:k+2*dim_in*batch_size-1), (dim_in, batch_size))
+        # output .= reshape(view(signal, k+dim_in*batch_size:k+2*dim_in*batch_size-1), (dim_in, batch_size))    # dim_in step prediction
+        input  .= reshape(view(signal, k+dim_in*batch_size-1:-1:k), (dim_in, batch_size))
+        output .= reshape(view(signal, k+dim_in*batch_size:-1:k+1), (dim_in, batch_size))
 
         # train model
         loss_value_train_tmp += mean(train_batch!(model, input, output, loss_function))
@@ -148,8 +152,8 @@ function test_signal!(model, signal, input, output, loss_function)
     for k in rng
         
         # load data
-        input  .= reshape(view(signal, k:k+dim_in*batch_size-1), (dim_in, batch_size))
-        output .= reshape(view(signal, k+dim_in*batch_size:k+2*dim_in*batch_size-1), (dim_in, batch_size))
+        input  .= reshape(view(signal, k+dim_in*batch_size-1:-1:k), (dim_in, batch_size))
+        output .= reshape(view(signal, k+dim_in*batch_size:-1:k+1), (dim_in, batch_size))
 
         # test model
         loss_value_test_tmp += mean(test_batch!(model, input, output, loss_function))

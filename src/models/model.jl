@@ -1,5 +1,5 @@
 export Model
-export DenseLayer, LeakyReluLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
+export DenseLayer, LeakyReluLayer, MvAdditiveLayer, NarLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
 export forward!, propagate_error!, update!
 export setlr!, setbatchsize!
@@ -16,6 +16,7 @@ include("parameter.jl")
 include("layers/dense.jl")
 include("layers/leakyrelu.jl")
 include("layers/mv_additive_layer.jl")
+include("layers/nar_layer.jl")
 include("layers/permutation_layer.jl")
 include("layers/relu.jl")
 include("layers/residual_layer.jl")
