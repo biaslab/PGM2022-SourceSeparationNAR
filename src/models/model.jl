@@ -8,6 +8,10 @@ export isinvertible, nr_params, print_info
 abstract type AbstractModel end
 abstract type AbstractLayer end
 
+# Simplified model call
+(model::AbstractModel)(x) = forward(model, x)
+(layer::AbstractLayer)(x) = forward(layer, x)
+
 
 # include parameters and memory
 include("parameter.jl")
@@ -52,9 +56,6 @@ function Model(dim_in, dim_out, layers; batch_size::Int64=128)
         return Model(dim_in, dim_out, layers, Memory(dim_in, dim_out, batch_size))
     end
 end
-
-# Simplified model call
-(model::Model)(x) = forward(model, x)
 
 # forward function without memory
 function forward(model::Model{<:Tuple,Nothing}, input::T)
