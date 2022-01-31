@@ -1,25 +1,36 @@
 using LinearAlgebra, Random
 
-mutable struct DenseLayer{T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseLayer{M <: Union{Nothing, Memory}, T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     W               :: Parameter{Matrix{T}, O1}
     b               :: Parameter{Vector{T}, O2}
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    memory          :: M
 end
 function DenseLayer(dim_in, dim_out; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=Adam)
-    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), Parameter(rand(initializer[2], dim_out), optimizer), zeros(dim_in, batch_size), zeros(dim_out, batch_size), zeros(dim_in, batch_size), zeros(dim_out, batch_size))
+    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), Parameter(rand(initializer[2], dim_out), optimizer), Memory(dim_in, dim_out, batch_size))
 end
 
-function forward!(layer::DenseLayer)
+function forward(layer::DenseLayer{Nothing,T,O1,O2}, input) where { T, O1, O2 }
 
     # fetch from layer
     W       = layer.W.value
     b       = layer.b.value
-    input   = layer.input
+
+    # calculate output of layer
+    output = custom_mulp(W, input, b)
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+
+    # fetch from layer
+    W       = layer.W.value
+    b       = layer.b.value
+    input   = getmatinput(layer)
 
     # calculate output of layer
     output = getmatoutput(layer)
@@ -30,7 +41,7 @@ function forward!(layer::DenseLayer)
     
 end
 
-function propagate_error!(layer::DenseLayer)
+function propagate_error!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -42,7 +53,7 @@ function propagate_error!(layer::DenseLayer)
     ∂L_∂y   = getmatgradientoutput(layer)
     ∂L_∂W   = W.gradient
     ∂L_∂b   = b.gradient
-    input   = layer.input
+    input   = getmatinput(layer)
     batch_size = size(input, 2)
     ibatch_size = 1 / batch_size
 
@@ -71,7 +82,7 @@ function propagate_error!(layer::DenseLayer)
 
 end
 
-function update!(layer::DenseLayer)
+function update!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
 
     # update parameters in layer
     update!(layer.W)
@@ -79,7 +90,7 @@ function update!(layer::DenseLayer)
     
 end
 
-function setlr!(layer::DenseLayer, lr)
+function setlr!(layer::DenseLayer{<:Memory,T,O1,O2}, lr) where { T, O1, O2 }
 
     # update parameters in layer
     setlr!(layer.W, lr)

@@ -1,11 +1,8 @@
-mutable struct MvAdditiveLayer{L <: Tuple, T <: Real} <: AbstractLayer
+mutable struct MvAdditiveLayer{L <: Tuple, M <: Union{Nothing, Memory} } <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: L
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    memory          :: M
 end
 function MvAdditiveLayer(dim::Int, f::L; batch_size::Int64=128) where { L <: Tuple}
     for k in length(f)-1
@@ -16,14 +13,55 @@ function MvAdditiveLayer(dim::Int, f::L; batch_size::Int64=128) where { L <: Tup
         ind += fk.dim_in 
     end
     @assert ind + f[end].dim_out == dim
-    return MvAdditiveLayer(dim, dim, f, zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size))
+    return MvAdditiveLayer(dim, dim, f, Memory(dim,batch_size))
 end
 function MvAdditiveLayer(dim::Int, f; batch_size::Int64=128)
     @assert f.dim_in + f.dim_out == dim
-    return MvAdditiveLayer(dim, dim, (f,), zeros(dim, batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
+    return MvAdditiveLayer(dim, dim, (f,), Memory(dim,batch_size))
 end
 
-function forward!(layer::MvAdditiveLayer)
+function forward(layer::MvAdditiveLayer{<:Tuple,Nothing}, input)
+
+    # set output of layer (the additive component)
+    output = similar(input)
+    output .= input
+    batch_size = size(input,2)
+    
+    # fetch coupling functions
+    f     = layer.f
+    len_f = length(f)
+
+    # set starting index
+    ind   = 0
+
+    # loop through coupling functions 
+    @inbounds for k in 1:len_f
+
+        # fetch current function
+        current_f = f[k]
+
+        # run current function forward
+        current_f_output = forward!(current_f, input[ind+1:current_f_dim, :])::Matrix{Float64}
+
+        # process current output
+        @turbo for k1 in 1:current_f_dim
+            for k2 in 1:batch_size
+                output[k1+current_f_dim+ind,k2] += current_f_output[k1,k2]
+            end
+        end
+
+        # update index
+        ind += current_f_dim
+
+    end
+
+    # return output 
+    return output
+    
+end
+
+
+function forward!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
 
     # set output of layer (the additive component)
     input  = layer.input
@@ -73,7 +111,7 @@ function forward!(layer::MvAdditiveLayer)
     
 end
 
-function propagate_error!(layer::MvAdditiveLayer)
+function propagate_error!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
 
     # set gradient input of layer (the additive component)
     gradient_input  = getmatgradientinput(layer)
@@ -123,7 +161,7 @@ function propagate_error!(layer::MvAdditiveLayer)
 
 end
 
-function update!(layer::MvAdditiveLayer)
+function update!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
     
     # fetch functions
     f = layer.f
@@ -135,7 +173,7 @@ function update!(layer::MvAdditiveLayer)
     
 end
 
-function setlr!(layer::MvAdditiveLayer, lr)
+function setlr!(layer::MvAdditiveLayer{<:Tuple,<:Memory}, lr)
     
     # fetch functions
     f = layer.f

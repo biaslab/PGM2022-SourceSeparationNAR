@@ -1,18 +1,44 @@
-mutable struct NarLayer{M, T <: Real} <: AbstractLayer
+mutable struct NarLayer{F, M<:Union{Nothing, Memory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    f               :: M
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    f               :: F
+    memory          :: M
 end
 function NarLayer(dim, f; batch_size::Int64=128)
     @assert dim == f.dim_in + f.dim_out
-    return NarLayer(dim, dim, f, zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
+    return NarLayer(dim, dim, f, Memory(dim, batch_size))
 end
 
-function forward!(layer::NarLayer) 
+function forward(layer::NarLayer{F,Nothing}, input) where { F }
+    output = similar(input)
+    f = layer.f
+    dim_in = f.dim_in
+    dim_out = f.dim_out
+    (sz1, sz2) = size(input)
+
+    # update output of layer (shifted component)
+    @turbo for k1 in 1:dim_in
+        for k2 in 1:sz2
+            output[k1+dim_out,k2] = input[k1,k2]
+        end
+    end 
+
+    # run current function forward
+    f_output = forward(f, input)::Matrix{Float64}
+
+    # process current output
+    @turbo for k1 in 1:dim_out
+        for k2 in 1:sz2
+            output[k1,k2] = f_output[k1,k2] + input[k1+dim_in,k2]
+        end
+    end
+
+    # return output
+    return output
+
+end
+
+function forward!(layer::NarLayer{F,<:Memory}) where { F } 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -30,7 +56,7 @@ function forward!(layer::NarLayer)
     end 
 
     # set input of internal function (custom to prevent allocs)
-    f_input = f.input
+    f_input = f.memory.input
     @turbo for k1 in 1:dim_in
         for k2 in 1:sz2
             f_input[k1,k2] = input[k1,k2]
@@ -52,7 +78,7 @@ function forward!(layer::NarLayer)
     
 end
 
-function propagate_error!(layer::NarLayer) 
+function propagate_error!(layer::NarLayer{F,<:Memory}) where { F } 
     
     # fetch input and output gradients in layer
     gradient_input  = getmatgradientinput(layer)
@@ -92,9 +118,9 @@ function propagate_error!(layer::NarLayer)
     
 end
 
-update!(layer::NarLayer) = update!(layer.f)
+update!(layer::NarLayer{F,<:Memory}) where { F } = update!(layer.f)
 
-setlr!(layer::NarLayer, lr) = setlr!(layer.f, lr)
+setlr!(layer::NarLayer{F,<:Memory}, lr) where { F } = setlr!(layer.f, lr)
 
 isinvertible(::NarLayer) = true
 

@@ -1,16 +1,31 @@
-mutable struct ReluLayer{T <: Real} <: AbstractLayer
+mutable struct ReluLayer{M <: Memory} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    memory          :: M
 end
 function ReluLayer(dim; batch_size::Int64=128)
-    return ReluLayer(dim, dim, zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
+    return ReluLayer(dim, dim, Memory(dim,batch_size))
 end
 
-function forward!(layer::ReluLayer) 
+function forward(layer::ReluLayer{Nothing}, input)
+    
+    # fetch input and output in layer
+    output = similar(input)
+    (ax1, ax2) = axes(input)
+
+    # update output of layer
+    @turbo for k1 in ax1
+        for k2 in ax2
+            output[k1,k2] = relu(input[k1,k2])
+        end
+    end
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::ReluLayer{<:Memory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -29,7 +44,7 @@ function forward!(layer::ReluLayer)
     
 end
 
-function propagate_error!(layer::ReluLayer) 
+function propagate_error!(layer::ReluLayer{<:Memory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -49,9 +64,9 @@ function propagate_error!(layer::ReluLayer)
     
 end
 
-update!(::ReluLayer) = return
+update!(::ReluLayer{<:Memory}) = return
 
-setlr!(::ReluLayer, lr) = return
+setlr!(::ReluLayer{<:Memory}, lr) = return
 
 isinvertible(::ReluLayer) = false
 

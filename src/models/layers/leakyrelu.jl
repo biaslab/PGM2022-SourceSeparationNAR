@@ -1,17 +1,33 @@
-mutable struct LeakyReluLayer{T <: Real} <: AbstractLayer
+mutable struct LeakyReluLayer{M <: Union{Nothing, Memory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     alpha           :: Float64
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    memory          :: M
 end
 function LeakyReluLayer(dim; batch_size::Int64=128, alpha::Float64=0.1)
-    return LeakyReluLayer(dim, dim, alpha, zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size), zeros(dim,batch_size))
+    return LeakyReluLayer(dim, dim, alpha, Memory(dim, batch_size))
 end
 
-function forward!(layer::LeakyReluLayer) 
+function forward(layer::LeakyReluLayer{Nothing}, input) 
+    
+    # fetch input and output in layer
+    output = similar(input)
+    alpha  = layer.alpha
+    (ax1, ax2) = axes(input)
+
+    # update output of layer
+    @turbo for k1 in ax1
+        for k2 in ax2
+            output[k1,k2] = (!signbit(input[k1,k2])*(1-alpha) + alpha) * input[k1,k2]
+        end
+    end
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::LeakyReluLayer{<:Memory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -31,7 +47,7 @@ function forward!(layer::LeakyReluLayer)
     
 end
 
-function propagate_error!(layer::LeakyReluLayer) 
+function propagate_error!(layer::LeakyReluLayer{<:Memory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -52,11 +68,11 @@ function propagate_error!(layer::LeakyReluLayer)
     
 end
 
-update!(::LeakyReluLayer) = return
+update!(::LeakyReluLayer{<:Memory}) = return
 
-setlr!(::LeakyReluLayer, lr) = return
+setlr!(::LeakyReluLayer{<:Memory}, lr) = return
 
-isinvertible(::LeakyReluLayer) = true
+isinvertible(layer::LeakyReluLayer) = layer.alpha > 0
 
 nr_params(::LeakyReluLayer) = 0
 

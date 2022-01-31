@@ -1,19 +1,19 @@
 using LoopVectorization: @turbo
 
-getinput(f)                 = f.input
-getoutput(f)                = f.output
-getgradientinput(f)         = f.gradient_input
-getgradientoutput(f)        = f.gradient_output
+getinput(f)                 = f.memory.input
+getoutput(f)                = f.memory.output
+getgradientinput(f)         = f.memory.gradient_input
+getgradientoutput(f)        = f.memory.gradient_output
 getmatinput(f)              = getmat(getinput(f))
 getmatoutput(f)             = getmat(getoutput(f))
 getmatgradientinput(f)      = getmat(getgradientinput(f))
 getmatgradientoutput(f)     = getmat(getgradientoutput(f))
 getmat(A::AbstractArray)    = A
 
-setinput!(f, input)                     = f.input = input
-setoutput!(f, output)                   = f.output = output
-setgradientinput!(f, gradient_input)    = f.gradient_input = gradient_input
-setgradientoutput!(f, gradient_output)  = f.gradient_output = gradient_output
+setinput!(f, input)                     = f.memory.input = input
+setoutput!(f, output)                   = f.memory.output = output
+setgradientinput!(f, gradient_input)    = f.memory.gradient_input = gradient_input
+setgradientoutput!(f, gradient_output)  = f.memory.gradient_output = gradient_output
 
 function copytoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
     
@@ -33,7 +33,7 @@ end
 function copytoinput!(f, input::T) where { T <: Real }
     
     # set input
-    f.input = input
+    f.memory.input = input
 
 end
 
@@ -70,7 +70,7 @@ end
 function copytooutput!(f, output::T) where { T <: Real }
     
     # set output
-    f.output = output
+    f.memory.output = output
 
 end
 
@@ -92,7 +92,7 @@ end
 function copytogradientinput!(f, gradient_input::T) where { T <: Real }
     
     # set gradient input
-    f.gradient_input = gradient_input
+    f.memory.gradient_input = gradient_input
 
 end
 
@@ -114,7 +114,7 @@ end
 function copytogradientoutput!(f, gradient_output::T) where { T <: Real }
     
     # set gradient output
-    f.gradient_output = gradient_output
+    f.memory.gradient_output = gradient_output
 
 end
 

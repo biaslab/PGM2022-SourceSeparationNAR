@@ -1,7 +1,7 @@
 export Model
 export DenseLayer, LeakyReluLayer, MvAdditiveLayer, NarLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
-export forward!, propagate_error!, update!
+export forward, forward!, propagate_error!, update!
 export setlr!, setbatchsize!
 export isinvertible, nr_params, print_info
 
@@ -9,8 +9,9 @@ abstract type AbstractModel end
 abstract type AbstractLayer end
 
 
-# include parameters
+# include parameters and memory
 include("parameter.jl")
+include("memory.jl")
 
 # include layers
 include("layers/dense.jl")
@@ -25,27 +26,60 @@ include("layers/softmax.jl")
 # include helpers
 include("helpers.jl")
 
-mutable struct Model{L <: Tuple, T <: Real, V1 <: AbstractMatrix, V2 <: AbstractMatrix } <: AbstractModel
+# Model constructors
+mutable struct Model{L <: Tuple, M <: Union{Nothing,Memory}} <: AbstractModel
     dim_in          :: Int64
     dim_out         :: Int64
     layers          :: L
-    input           :: Matrix{T}
-    output          :: V1
-    gradient_input  :: Matrix{T}
-    gradient_output :: V2
+    memory          :: M
 end
 function Model(dim, layers; batch_size::Int64=128)
     return Model(dim, dim, layers; batch_size=batch_size)
 end
 function Model(dim_in, dim_out, layers; batch_size::Int64=128)
     if typeof(last(layers)) <: SoftmaxLayer
-        return Model(dim_in, dim_out, layers, zeros(dim_in,batch_size), SoftmaxOutput(zeros(dim_out, batch_size)), zeros(dim_in, batch_size), SoftmaxGradientOutput(zeros(dim_out, batch_size)))
+        return Model(   dim_in, 
+                        dim_out, 
+                        layers,
+                        Memory(
+                            zeros(dim_in,batch_size), 
+                            SoftmaxOutput(zeros(dim_out, batch_size)), 
+                            zeros(dim_in, batch_size), 
+                            SoftmaxGradientOutput(zeros(dim_out, batch_size))
+                        ) 
+                    )
     else
-        return Model(dim_in, dim_out, layers, zeros(dim_in,batch_size), zeros(dim_out,batch_size), zeros(dim_in,batch_size), zeros(dim_out,batch_size))
+        return Model(dim_in, dim_out, layers, Memory(dim_in, dim_out, batch_size))
     end
 end
 
-function forward!(model::Model{L,T,V1,V2}, input::Matrix{T}) where { L, T <: Real, V1, V2}
+# Simplified model call
+(model::Model)(x) = forward(model, x)
+
+# forward function without memory
+function forward(model::Model{<:Tuple,Nothing}, input::T)
+
+    # fetch layers
+    layers = model.layers
+
+    # set temporary output
+    output = copy(input)
+
+    # propagate through layers
+    @inbounds for layer in layers
+        
+        # run current layer forward
+        output = forward(layer, output)::T # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+    end
+
+    # return output
+    return output
+
+end
+
+# forward function with memory
+function forward!(model::Model{<:Tuple,<:Memory}, input)
 
     # set input in model
     copytoinput!(model, input)
@@ -58,7 +92,8 @@ function forward!(model::Model{L,T,V1,V2}, input::Matrix{T}) where { L, T <: Rea
 
 end
 
-function forward!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
+# internal forward function for model with memory
+function forward!(model::Model{<:Tuple,<:Memory}) 
 
     # fetch layers
     layers = model.layers
@@ -73,7 +108,7 @@ function forward!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
         linktoinput!(layer, current_input)
         
         # run current layer forward
-        current_input = forward!(layer)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+        current_input = forward!(layer)::Matrix{Float64} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
     end
 
@@ -81,11 +116,13 @@ function forward!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
     copytooutput!(model, current_input)
 
     # return output
-    return model.output
+    return getoutput(model)
     
 end
 
-function propagate_error!(model::Model{L,T,V1,V2}, gradient_output::Matrix{T}) where { L, T <: Real, V1, V2 }
+
+# backpropagation requires memory
+function propagate_error!(model::Model{<:Tuple,<:Memory}, gradient_output::Matrix)
 
     # set gradient output in model
     copytogradientoutput!(model, gradient_output)
@@ -98,7 +135,7 @@ function propagate_error!(model::Model{L,T,V1,V2}, gradient_output::Matrix{T}) w
     
 end
 
-function propagate_error!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 }
+function propagate_error!(model::Model{<:Tuple,<:Memory})
 
     # fetch layers
     layers = model.layers
@@ -121,11 +158,12 @@ function propagate_error!(model::Model{L,T,V1,V2}) where { L, T <: Real, V1, V2 
     copytogradientinput!(model, current_gradient_output)
 
     # return gradient input of model
-    return model.gradient_input
+    return getmatgradientinput(model)
 
 end
 
-function update!(model::Model)
+# update requires memory
+function update!(model::Model{<:Tuple,<:Memory})
 
     # fetch layers
     layers = model.layers
@@ -137,7 +175,7 @@ function update!(model::Model)
 
 end
 
-function setlr!(model::Model, lr)
+function setlr!(model::Model{<:Tuple,<:Memory}, lr)
 
     # fetch layers
     layers = model.layers

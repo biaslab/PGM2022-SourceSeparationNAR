@@ -2,20 +2,34 @@ using LinearAlgebra, Random
 
 using LoopVectorization: @turbo
 
-mutable struct ResidualLayer{M, T <: Real} <: AbstractLayer
+mutable struct ResidualLayer{F, M<:Union{Nothing, Memory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    f               :: M
-    input           :: Matrix{T}
-    output          :: Matrix{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: Matrix{T}
+    f               :: F
+    memory          :: M
 end
 function ResidualLayer(dim, f; batch_size::Int64=128)
-    return ResidualLayer(dim, dim, f, zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size), zeros(dim, batch_size))
+    return ResidualLayer(dim, dim, f, Memory(dim, batch_size))
 end
 
-function forward!(layer::ResidualLayer)
+function forward(layer::ResidualLayer{F,Nothing}, input) where { F }
+
+    # fetch from layer
+    output  = copy(input)
+    f       = layer.f
+
+    # run internal model forward
+    output_f = forward(f, input)
+
+    # add output of internal model to layer output
+    @turbo output .+= output_f
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::ResidualLayer{F,<:Memory}) where { F }
 
     # fetch from layer
     input   = layer.input
@@ -39,7 +53,7 @@ function forward!(layer::ResidualLayer)
     
 end
 
-function propagate_error!(layer::ResidualLayer)
+function propagate_error!(layer::ResidualLayer{F,<:Memory}) where { F }
 
     # fetch from layer
     ∂L_∂x   = getmatgradientinput(layer)
@@ -63,14 +77,14 @@ function propagate_error!(layer::ResidualLayer)
 
 end
 
-function update!(layer::ResidualLayer)
+function update!(layer::ResidualLayer{F,<:Memory}) where { F }
 
     # update model in layer
     update!(layer.f)
     
 end
 
-function setlr!(layer::ResidualLayer, lr)
+function setlr!(layer::ResidualLayer{F,<:Memory}, lr) where { F }
 
     # update learning rate in layer
     setlr!(layer.f, lr)

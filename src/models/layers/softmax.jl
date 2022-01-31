@@ -20,26 +20,37 @@ Base.getindex(x::SoftmaxGradientOutput, i, ii) = x.mat[i,ii]
 Base.setindex!(x::SoftmaxGradientOutput, y, i, ii) = (x.mat[i,ii] = y)
 getmat(A::SoftmaxGradientOutput) = A.mat
 
-mutable struct SoftmaxLayer{T <: Real} <: AbstractLayer
+mutable struct SoftmaxLayer{M <: Union{Nothing,Memory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    input           :: Matrix{T}
-    output          :: SoftmaxOutput{T}
-    gradient_input  :: Matrix{T}
-    gradient_output :: SoftmaxGradientOutput{T}
+    memory          :: M
 end
 function SoftmaxLayer(dim; batch_size::Int64=128)
-    return SoftmaxLayer(dim, dim, zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size)))
+    return SoftmaxLayer(dim, dim, Memory(zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size))))
 end
 
 function setoutput!(f::SoftmaxLayer, output)
-    f.output.mat = output
+    f.memory.output.mat = output
 end
 function setgradientoutput!(f::SoftmaxLayer, gradient_output)
-    f.gradient_output.mat = gradient_output
+    f.memory.gradient_output.mat = gradient_output
 end
 
-function forward!(layer::SoftmaxLayer) 
+function forward(layer::SoftmaxLayer{Nothing}, input)
+    
+    # create output in layer
+    output = similar(input)
+
+    # update output of layer
+    @turbo output .= input
+    softmax!(output) # for numerical stability use custom vector type instead.
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::SoftmaxLayer{<:Memory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -54,7 +65,7 @@ function forward!(layer::SoftmaxLayer)
     
 end
 
-function propagate_error!(layer::SoftmaxLayer) 
+function propagate_error!(layer::SoftmaxLayer{<:Memory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -76,9 +87,9 @@ function propagate_error!(layer::SoftmaxLayer)
     
 end
 
-update!(::SoftmaxLayer) = return
+update!(::SoftmaxLayer{<:Memory}) = return
 
-setlr!(::SoftmaxLayer, lr) = return
+setlr!(::SoftmaxLayer{<:Memory}, lr) = return
 
 isinvertible(::SoftmaxLayer) = false
 
