@@ -1,4 +1,4 @@
-export prepare_data
+export prepare_data, Data
 
 ## data.jl Julia code to handle matrix-type data on disc
 using Statistics

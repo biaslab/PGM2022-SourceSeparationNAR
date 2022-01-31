@@ -23,38 +23,37 @@ function run!(train_suite::TrainSuite)
     
     # create folder for logging and open files
     mkdir(string(train_suite.log_folder, timestamp))
-    io_train = open(string(train_suite.log_folder, timestamp, "/train.csv"), "w")
-    io_test  = open(string(train_suite.log_folder, timestamp, "/test.csv"), "w")
+    logfile_train = string(train_suite.log_folder, timestamp, "/train.csv")
+    logfile_test  = string(train_suite.log_folder, timestamp, "/test.csv")
 
     # print model structure
     print_info(train_suite.model, string(train_suite.log_folder, timestamp, "/model.txt"))
 
     # log headers
     header = string("epoch,", getid(train_suite.loss), "\n")
-    write(io_train, header)
-    write(io_test, header)
+    open(logfile_train,"w") do f
+        write(f, header)
+    end
+    open(logfile_test,"w") do f
+        write(f, header)
+    end
 
     # loop through epochs
     for epoch in 1:train_suite.epochs
 
         # run for a single epoch
-        run_epoch!(train_suite, epoch, io_train, io_test)
+        run_epoch!(train_suite, epoch, logfile_train, logfile_test)
+
+        # save model
+        save(string(train_suite.log_folder, timestamp, "/model.jld2"), "model", train_suite.model)
 
     end
-
-    # close io
-    close(io_train)
-    close(io_test)
-
-    # save model
-    save(string(train_suite.log_folder, timestamp, "/model.jld2"), "model", train_suite.model)
 
     return
 
 end
 
-
-function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
+function run_epoch!(train_suite::TrainSuite, epoch, logfile_train, logfile_test)
 
     # fetch variables
     train_data = train_suite.train_data
@@ -80,7 +79,9 @@ function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
         loss_value_train += loss_value_train_tmp
 
         # log train loss
-        write(io_train, string((epoch-1)+index/length(train_data), ",", loss_value_train_tmp, "\n"))
+        open(logfile_train,"a") do f
+            write(f, string((epoch-1)+index/length(train_data), ",", loss_value_train_tmp, "\n"))
+        end
 
         # update progress meter
         next!(p; showvalues = [
@@ -103,7 +104,9 @@ function run_epoch!(train_suite::TrainSuite, epoch, io_train, io_test)
     loss_value_test /= length(test_data)
 
     # log test loss
-    write(io_test, string(epoch, ",", loss_value_test, "\n"))
+    open(logfile_test,"a") do f
+        write(f, string(epoch, ",", loss_value_test, "\n"))
+    end
 
     # log losses to user
     next!(p; showvalues = [

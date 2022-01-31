@@ -8,7 +8,7 @@ function plot_logs(; path="logs/", logscale=false, loss=["mse", "mae"])
     plt.figure()
 
     # loop through folders in log folder
-    for folder in readdir(path)
+    for folder in filter(x -> isdir(string(path, "/", x)), readdir(path))
 
         # loop through files in folder
         for file in filter(x->occursin(".csv",x), readdir(string(path, folder)))
