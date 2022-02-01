@@ -36,7 +36,7 @@ function setgradientoutput!(f::SoftmaxLayer, gradient_output)
     f.memory.gradient_output.mat = gradient_output
 end
 
-function forward(layer::SoftmaxLayer{Nothing}, input)
+function forward(layer::SoftmaxLayer, input)
     
     # create output in layer
     output = similar(input)

@@ -1,9 +1,12 @@
 export Model
 export DenseLayer, LeakyReluLayer, MvAdditiveLayer, NarLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
-export forward, forward!, propagate_error!, update!
+export forward, backward, jacobian, invjacobian
+export forward!, propagate_error!, update!
 export setlr!, setbatchsize!
 export isinvertible, nr_params, print_info
+
+using LinearAlgebra: I
 
 abstract type AbstractModel end
 abstract type AbstractLayer end
@@ -57,8 +60,8 @@ function Model(dim_in, dim_out, layers; batch_size::Int64=128)
     end
 end
 
-# forward function without memory
-function forward(model::Model{<:Tuple,Nothing}, input::T)
+# forward function without efficient allocations
+function forward(model::Model, input::T) where { T <: AbstractArray }
 
     # fetch layers
     layers = model.layers
@@ -76,6 +79,90 @@ function forward(model::Model{<:Tuple,Nothing}, input::T)
 
     # return output
     return output
+
+end
+
+# backward function
+function backward(model::Model, output::T) where { T <: AbstractArray }
+
+    # fetch layers
+    layers = model.layers
+
+    # set temporary input
+    input = copy(output)
+
+    # propagate through layers
+    @inbounds for layer in reverse(layers)
+        
+        # run current layer backward
+        input = backward(layer, input)::T # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+    end
+
+    # return output
+    return input
+
+end
+
+# jacobian function
+function jacobian(model::Model, input::Vector{T}) where { T <: Real }
+
+    # fetch layers
+    layers = model.layers
+
+    # set temporary jacobian
+    current_J = I
+
+    # set current input
+    current_input = copy(input)
+
+    # propagate through layers
+    @inbounds for layer in layers
+        
+        # run current layer forward
+        J_new = jacobian(layer, current_input)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+        # update current jacobian
+        current_J = J_new * current_J
+
+        # run model forward
+        current_input = forward(layer, current_input)
+
+    end
+
+    # return jacobian
+    return current_J
+
+end
+
+# inverse jacobian function
+function invjacobian(model::Model, output::Vector{T}) where { T <: Real }
+
+    # fetch layers
+    layers = model.layers
+
+    # set temporary inverse jacobian
+    current_invJ = I
+
+    # set current output
+    current_output = copy(output)
+
+    # propagate through layers
+    @inbounds for layer in layers
+        
+        # calculate inverse jacobian
+        invJ_new = invjacobian(layer, current_output)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+        # update current jacobian
+        current_invJ = invJ_new * current_invJ
+
+        # run model backward
+        current_output = backward(layer, current_output)
+
+    end
+
+    # return inverse jacobian
+    return current_invJ
 
 end
 
@@ -121,7 +208,6 @@ function forward!(model::Model{<:Tuple,<:Memory})
     
 end
 
-
 # backpropagation requires memory
 function propagate_error!(model::Model{<:Tuple,<:Memory}, gradient_output::Matrix)
 
@@ -151,7 +237,7 @@ function propagate_error!(model::Model{<:Tuple,<:Memory})
         linktogradientoutput!(layer, current_gradient_output)
 
         # run current layer forward
-        current_gradient_output = propagate_error!(layer)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+        current_gradient_output = propagate_error!(layer)::Matrix{Float64} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
     end
 

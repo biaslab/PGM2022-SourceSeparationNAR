@@ -11,18 +11,23 @@ function DenseLayer(dim_in, dim_out; batch_size::Int64=128, initializer::Tuple=(
     return DenseLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), Parameter(rand(initializer[2], dim_out), optimizer), Memory(dim_in, dim_out, batch_size))
 end
 
-function forward(layer::DenseLayer{Nothing,T,O1,O2}, input) where { T, O1, O2 }
+function forward(layer::DenseLayer, input)
 
     # fetch from layer
     W       = layer.W.value
     b       = layer.b.value
 
     # calculate output of layer
-    output = custom_mulp(W, input, b)
-
+    # output = custom_mulp(W, input, b)
+    output = W*input + b
+    
     # return output 
     return output
     
+end
+
+function jacobian(layer::DenseLayer, ::Vector{<:Real})
+    return layer.W.value
 end
 
 function forward!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }

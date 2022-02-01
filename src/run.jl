@@ -65,7 +65,7 @@ function run_epoch!(train_suite::TrainSuite, epoch, logfile_train, logfile_test)
     shuffle!(train_data.list)
 
     # allocate space for input and output
-    input, output = similar(model.input), similar(model.output)
+    input, output = similar(model.memory.input), similar(model.memory.output)
 
     # start progress meter
     p = Progress(length(train_data)+1, 1, string("epoch ", lpad(epoch, 3, "0"),": "))
@@ -119,7 +119,7 @@ end
 function train_signal!(model, signal, input, output, loss_function)
 
     # fetch info
-    (dim_in, batch_size) = size(model.input)
+    (dim_in, batch_size) = size(model.memory.input)
 
     # specify range
     rng = randperm(length(signal)-2*dim_in*batch_size)
@@ -147,7 +147,7 @@ end
 function test_signal!(model, signal, input, output, loss_function)
 
     # fetch info
-    (dim_in, batch_size) = size(model.input)
+    (dim_in, batch_size) = size(getmatinput(model))
 
     # specify range
     rng = 1:length(signal)-2*dim_in*batch_size

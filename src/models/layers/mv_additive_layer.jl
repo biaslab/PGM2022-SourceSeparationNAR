@@ -20,7 +20,7 @@ function MvAdditiveLayer(dim::Int, f; batch_size::Int64=128)
     return MvAdditiveLayer(dim, dim, (f,), Memory(dim,batch_size))
 end
 
-function forward(layer::MvAdditiveLayer{<:Tuple,Nothing}, input)
+function forward(layer::MvAdditiveLayer, input)
 
     # set output of layer (the additive component)
     output = similar(input)

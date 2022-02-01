@@ -1,4 +1,4 @@
-mutable struct ReluLayer{M <: Memory} <: AbstractLayer
+mutable struct ReluLayer{M <: Union{Nothing, Memory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     memory          :: M

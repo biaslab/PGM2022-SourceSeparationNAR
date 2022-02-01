@@ -1,5 +1,6 @@
 module SourceSeparationNF
 
+    include("algebra/cholesky.jl")
     include("algebra/custom_mul.jl")
     include("algebra/logsumexp.jl")
     include("algebra/permutation_matrix.jl")

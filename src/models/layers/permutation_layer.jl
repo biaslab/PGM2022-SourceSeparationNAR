@@ -10,7 +10,7 @@ function PermutationLayer(dim::Int, P::PermutationMatrix; batch_size::Int64=128)
     return PermutationLayer(dim, P, Memory(dim, batch_size))
 end
 
-function forward(layer::PermutationLayer{Nothing}, input)
+function forward(layer::PermutationLayer, input)
     
     # calculate output of layer
     output = mul(layer.P, input)

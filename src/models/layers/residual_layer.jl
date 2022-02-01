@@ -12,7 +12,7 @@ function ResidualLayer(dim, f; batch_size::Int64=128)
     return ResidualLayer(dim, dim, f, Memory(dim, batch_size))
 end
 
-function forward(layer::ResidualLayer{F,Nothing}, input) where { F }
+function forward(layer::ResidualLayer, input)
 
     # fetch from layer
     output  = copy(input)
