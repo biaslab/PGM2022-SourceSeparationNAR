@@ -1,6 +1,6 @@
-module SourceSeparationNFTest
+module SourceSeparationINNTest
 
-    using SourceSeparationNF
+    using SourceSeparationINN
     using Test
 
     @testset "Algebra" begin

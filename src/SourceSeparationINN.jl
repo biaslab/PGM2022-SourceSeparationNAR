@@ -1,4 +1,4 @@
-module SourceSeparationNF
+module SourceSeparationINN
 
     include("algebra/cholesky.jl")
     include("algebra/custom_mul.jl")
