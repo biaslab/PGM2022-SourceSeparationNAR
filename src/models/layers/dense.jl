@@ -64,11 +64,11 @@ function propagate_error!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2
 
     # set gradients for b
     @turbo for k1 in 1:dim_out
-        ∂L_∂b[k1] = 0
+        tmp = zero(T)
         for k2 in 1:batch_size
-            ∂L_∂b[k1] += ∂L_∂y[k1,k2]
+            tmp += ∂L_∂y[k1,k2]
         end
-        ∂L_∂b[k1] *= ibatch_size
+        ∂L_∂b[k1] = tmp * ibatch_size
     end
 
     # set gradient for W #todo
