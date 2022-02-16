@@ -130,9 +130,9 @@ function train_signal!(model, signal, input, output, loss_function)
         # output .= reshape(view(signal, k+dim_in*batch_size:k+2*dim_in*batch_size-1), (dim_in, batch_size))    # dim_in step prediction
         input  .= reshape(view(signal, k+dim_in*batch_size-1:-1:k), (dim_in, batch_size))
         output .= reshape(view(signal, k+dim_in*batch_size:-1:k+1), (dim_in, batch_size))
-        tmp = 0.1*randn(dim_in-1, batch_size)
-        input[1:end-1,:] .+= tmp
-        output[2:end,:] .+= tmp
+        # tmp = 0.1*randn(dim_in-1, batch_size)
+        # input[1:end-1,:] .+= tmp
+        # output[2:end,:] .+= tmp
 
         # train model
         loss_value_train_tmp += mean(train_batch!(model, input, output, loss_function))

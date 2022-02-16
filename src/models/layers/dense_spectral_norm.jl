@@ -25,8 +25,7 @@ function forward(layer::DenseSNLayer, input)
     Wsn ./= (opnorm(W) / layer.C)
 
     # calculate output of layer
-    # output = custom_mulp(W, input, b)
-    output = Wsn*input + b
+    output = custom_mulp(Wsn, input, b)
     
     # return output 
     return output
@@ -64,6 +63,7 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
     dim_in  = layer.dim_in
     dim_out = layer.dim_out
     W       = layer.W
+    Wsn     = layer.Wsn
     b       = layer.b
 
     ∂L_∂x   = getmatgradientinput(layer)
@@ -79,25 +79,31 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
         ∂L_∂b[k1] = 0
         for k2 in 1:batch_size
             ∂L_∂b[k1] += ∂L_∂y[k1,k2]
-        end
+        end 
         ∂L_∂b[k1] *= ibatch_size
     end
 
     # set gradient for W
     ∂L_∂Wsn = similar(∂L_∂W)
-    custom_mul!(∂L_∂Wsn, ∂L_∂y, input')
-    σ = opnorm(W.value)
+    custom_mul!(∂L_∂Wsn, ∂L_∂y, input') # E[δ * h^⊤]
+    # λ = mean(∂L_∂y' * Wsn * input) # E[δ^⊤ * (Wsn * h)]
+    # println(λ)
+    λ = mean(diag(∂L_∂y' * Wsn * input))
+    # println(λ)
 
-    @turbo for k1 in 1:dim_out
+    F = svd(W.value)
+    σ = F.S[1]
+    u1 = F.U[:,1]
+    v1 = F.Vt[1,:]
+
+    @inbounds for k1 in 1:dim_out
         for k2 in 1:dim_in
-            ∂L_∂W[k1,k2] = ∂L_∂Wsn[k1,k2] * ibatch_size / σ
+            ∂L_∂W[k1,k2] = (∂L_∂Wsn[k1,k2] - λ * u1[k1] * v1[k2]) * ibatch_size / σ
         end
     end
 
-
-
     # set gradient at input
-    custom_mul!(∂L_∂x, W.value', ∂L_∂y)
+    custom_mul!(∂L_∂x, Wsn', ∂L_∂y)
 
     # return gradient at input of layer
     return ∂L_∂x
