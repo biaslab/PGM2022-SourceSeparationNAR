@@ -3,13 +3,13 @@ mutable struct GradientDescent{T} <: AbstractOptimizer
     it   :: Int64
     diff :: T
 end
-function GradientDescent(;λ::T=1e-8)  where { T <: Real }
+function GradientDescent(;λ::T=1e-2)  where { T <: Real }
     return  GradientDescent(λ, 1, zero(T))
 end
-function GradientDescent(len::Int; λ::T=1e-8)  where { T <: Real }
+function GradientDescent(len::Int; λ::T=1e-2)  where { T <: Real }
     return GradientDescent(λ, 1, zeros(T, len))
 end
-function GradientDescent(size::Tuple; λ::T=1e-8) where { T <: Real }
+function GradientDescent(size::Tuple; λ::T=1e-2) where { T <: Real }
     return GradientDescent(λ, 1, zeros(T, size))
 end
 

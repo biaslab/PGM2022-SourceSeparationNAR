@@ -9,7 +9,7 @@ mutable struct DenseSNLayer{M <: Union{Nothing, Memory}, T <: Real, O1 <: Abstra
     C               :: Float64
     memory          :: M
 end
-function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=Adam)
+function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=GradientDescent)
     return DenseSNLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), randn(dim_out,dim_in), Parameter(rand(initializer[2], dim_out), optimizer), C, Memory(dim_in, dim_out, batch_size))
 end
 
@@ -77,11 +77,11 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
 
     # set gradients for b
     @turbo for k1 in 1:dim_out
-        ∂L_∂b[k1] = 0
+        tmp = zero(T)
         for k2 in 1:batch_size
-            ∂L_∂b[k1] += ∂L_∂y[k1,k2]
-        end 
-        ∂L_∂b[k1] *= ibatch_size
+            tmp += ∂L_∂y[k1,k2]
+        end
+        ∂L_∂b[k1] = tmp * ibatch_size
     end
 
     # set gradient for W
