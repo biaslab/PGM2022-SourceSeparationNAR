@@ -11,13 +11,13 @@ mutable struct Adam{T} <: AbstractOptimizer
     it   :: Int64
     diff :: T
 end
-function Adam(;ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-8)  where { T <: Real }
+function Adam(;ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-4)  where { T <: Real }
     return  Adam(zero(T), zero(T), zero(T), zero(T), ρ1, ρ2, ρ1, ρ2, λ, 1, zero(T))
 end
-function Adam(len::Int; ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-8)  where { T <: Real }
+function Adam(len::Int; ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-4)  where { T <: Real }
     return Adam(zeros(T, len), zeros(T, len), zeros(T, len), zeros(T, len), ρ1, ρ2, ρ1, ρ2, λ, 1, zeros(T, len))
 end
-function Adam(size::Tuple; ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-8) where { T <: Real }
+function Adam(size::Tuple; ρ1::T=0.9, ρ2::T=0.999, λ::T=1e-4) where { T <: Real }
     return Adam(zeros(T, size), zeros(T, size), zeros(T, size), zeros(T, size), ρ1, ρ2, ρ1, ρ2, λ, 1, zeros(T, size))
 end
 
