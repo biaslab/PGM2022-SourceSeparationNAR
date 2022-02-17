@@ -27,6 +27,7 @@ function svd_dominant_eigen(A; epsilon=1e-10)
     current_v = randn(min(n, m))
     current_v ./= norm(current_v)
     last_v = randn(min(n, m))
+    last_v ./= norm(last_v)
 
     if n > m
         B = custom_mul(A', A)
