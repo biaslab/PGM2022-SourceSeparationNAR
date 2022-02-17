@@ -4,6 +4,7 @@ module SourceSeparationINN
     include("algebra/custom_mul.jl")
     include("algebra/logsumexp.jl")
     include("algebra/permutation_matrix.jl")
+    include("algebra/svd.jl")
     
     include("optimizers/optimizers.jl")
 

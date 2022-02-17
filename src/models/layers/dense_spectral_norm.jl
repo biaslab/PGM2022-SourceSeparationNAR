@@ -45,8 +45,9 @@ function forward!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
     input   = getmatinput(layer)
 
     # normalize W
+    σ, _, _ = fast_tsvd(W)
     Wsn .= W
-    Wsn ./= opnorm(W)
+    Wsn ./= σ
 
     # calculate output of layer
     output = getmatoutput(layer)
@@ -91,10 +92,7 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
     λ = mean(diag(∂L_∂y' * Wsn * input))
     # println(λ)
 
-    F = svd(W.value)
-    σ = F.S[1]
-    u1 = F.U[:,1]
-    v1 = F.Vt[1,:]
+    σ, u1, v1 = fast_tsvd(W.value)
 
     @inbounds for k1 in 1:dim_out
         for k2 in 1:dim_in
