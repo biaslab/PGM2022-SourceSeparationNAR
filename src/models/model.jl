@@ -1,5 +1,5 @@
 export Model
-export DenseSNLayer, DenseLayer, LeakyReluLayer, MvAdditiveLayer, NarLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
+export ARLayer, DenseSNLayer, DenseLayer, iARLayer, LeakyReluLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
 export forward, backward, jacobian, invjacobian
 export forward!, propagate_error!, update!
@@ -21,11 +21,12 @@ include("parameter.jl")
 include("memory.jl")
 
 # include layers
+include("layers/ar_layer.jl")
 include("layers/dense_spectral_norm.jl")
 include("layers/dense.jl")
 include("layers/leakyrelu.jl")
+include("layers/iar_layer.jl")
 include("layers/mv_additive_layer.jl")
-include("layers/nar_layer.jl")
 include("layers/permutation_layer.jl")
 include("layers/relu.jl")
 include("layers/residual_layer.jl")
