@@ -88,9 +88,10 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
     # λ = mean(diag(∂L_∂y' * Wsn * input))
     λ = meandot(∂L_∂y, Wsn, input)
 
-    @inbounds for k1 in 1:dim_out
+    ibatch_sizeσ = ibatch_size / σ
+    @turbo for k1 in 1:dim_out
         for k2 in 1:dim_in
-            ∂L_∂W[k1,k2] = (∂L_∂Wsn[k1,k2] - λ * u1[k1] * v1[k2]) * ibatch_size / σ
+            ∂L_∂W[k1,k2] = (∂L_∂Wsn[k1,k2] - λ * u1[k1] * v1[k2]) * ibatch_sizeσ
         end
     end
 
