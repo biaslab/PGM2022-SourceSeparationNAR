@@ -1,3 +1,48 @@
+mutable struct SVDSpectralNormal{P, T} 
+    A       :: P
+    Asn     :: Matrix{T}
+    σ       :: Float64
+    u       :: Vector{T}
+    v       :: Vector{T}
+    changed :: Bool
+end
+function SVDSpectralNormal(A, C)
+    Asn = copy(A.value)
+
+    # perform truncated svd
+    σ, u, v = fast_tsvd(A.value)
+
+    # normalize matrix
+    Asn ./= (σ / C)
+
+    return SVDSpectralNormal(A, Asn, σ, u, v, false)
+end
+function normalize!(obj::SVDSpectralNormal{P,T}, C) where { P, T }
+    if obj.changed
+        # copy current matrix
+        obj.Asn .= obj.A.value
+
+        # perform truncated svd
+        σ, u, v = fast_tsvd(obj.A.value)
+
+        # normalize matrix
+        obj.Asn ./= (σ / C)
+
+        # save intermediate outputs
+        obj.changed = false
+        obj.σ       = σ
+        obj.u       = u
+        obj.v       = v
+    end
+    return obj.Asn
+end
+function update!(obj::SVDSpectralNormal)
+    update!(obj.A)
+    obj.changed = true
+end
+setlr!(obj::SVDSpectralNormal, lr)= setlr!(obj.A, lr)
+Base.length(obj::SVDSpectralNormal) = length(obj.A)
+
 function fast_tsvd(A; epsilon=1e-10)
 
     n, m = size(A)

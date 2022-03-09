@@ -18,8 +18,8 @@ function forward(layer::DenseLayer, input)
     b       = layer.b.value
 
     # calculate output of layer
-    # output = custom_mulp(W, input, b)
-    output = W*input + b
+    output = custom_mulp(W, input, b)
+    # output = W*input .+ b
     
     # return output 
     return output

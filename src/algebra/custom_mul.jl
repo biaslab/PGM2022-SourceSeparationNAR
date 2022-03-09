@@ -99,3 +99,21 @@ function custom_mulp!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, X::AbstractMat
     end
     return Y
 end
+
+function meandot(A, B, C)
+    M, batch_size = size(A)
+    N = size(B,2)
+
+    tmp1 = 0.0
+    @turbo for k = 1:batch_size
+        for km in 1:M
+            tmp2 = 0.0
+            for kn in 1:N
+                tmp2 += B[km,kn] * C[kn,k]
+            end
+            tmp2 *= A[km,k]
+            tmp1 += tmp2
+        end
+    end
+    return tmp1/batch_size
+end

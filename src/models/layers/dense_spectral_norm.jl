@@ -1,28 +1,24 @@
 using LinearAlgebra, Random
 
-mutable struct DenseSNLayer{M <: Union{Nothing, Memory}, T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseSNLayer{M <: Union{Nothing, Memory}, T <: Real, S <: SVDSpectralNormal, O2 <: AbstractOptimizer} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    W               :: Parameter{Matrix{T}, O1}
-    Wsn             :: Matrix{T}
+    W               :: S
     b               :: Parameter{Vector{T}, O2}
     C               :: Float64
     memory          :: M
 end
 function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=GradientDescent)
-    return DenseSNLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), randn(dim_out,dim_in), Parameter(rand(initializer[2], dim_out), optimizer), C, Memory(dim_in, dim_out, batch_size))
+    return DenseSNLayer(dim_in, dim_out, SVDSpectralNormal(Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), C), Parameter(rand(initializer[2], dim_out), optimizer), C, Memory(dim_in, dim_out, batch_size))
 end
 
 function forward(layer::DenseSNLayer, input)
+    
+    # normalize W
+    Wsn = normalize!(layer.W, layer.C)
 
     # fetch from layer
-    W       = layer.W.value
-    Wsn     = layer.Wsn
-    b       = layer.b.value
-
-    # normalize W
-    Wsn .= W 
-    Wsn ./= (opnorm(W) / layer.C)
+    b = layer.b.value
 
     # calculate output of layer
     output = custom_mulp(Wsn, input, b)
@@ -33,21 +29,17 @@ function forward(layer::DenseSNLayer, input)
 end
 
 function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
-    return layer.Wsn
+    return normalize!(layer.W, layer.C)
 end
 
 function forward!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
-    W       = layer.W.value
-    Wsn     = layer.Wsn
-    b       = layer.b.value
-    input   = getmatinput(layer)
+    b     = layer.b.value
+    input = getmatinput(layer)
 
     # normalize W
-    σ, _, _ = fast_tsvd(W)
-    Wsn .= W
-    Wsn ./= σ
+    Wsn = normalize!(layer.W, layer.C)
 
     # calculate output of layer
     output = getmatoutput(layer)
@@ -63,13 +55,11 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
     # fetch from layer
     dim_in  = layer.dim_in
     dim_out = layer.dim_out
-    W       = layer.W
-    Wsn     = layer.Wsn
     b       = layer.b
 
     ∂L_∂x   = getmatgradientinput(layer)
     ∂L_∂y   = getmatgradientoutput(layer)
-    ∂L_∂W   = W.gradient
+    ∂L_∂W   = layer.W.A.gradient
     ∂L_∂b   = b.gradient
     input   = getmatinput(layer)
     batch_size = size(input, 2)
@@ -84,15 +74,19 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
         ∂L_∂b[k1] = tmp * ibatch_size
     end
 
+    # normalize W
+    Wsn = normalize!(layer.W, layer.C)
+    σ = layer.W.σ
+    u1 = layer.W.u
+    v1 = layer.W.v
+
     # set gradient for W
     ∂L_∂Wsn = similar(∂L_∂W)
     custom_mul!(∂L_∂Wsn, ∂L_∂y, input') # E[δ * h^⊤]
     # λ = mean(∂L_∂y' * Wsn * input) # E[δ^⊤ * (Wsn * h)]
     # println(λ)
-    λ = mean(diag(∂L_∂y' * Wsn * input))
-    # println(λ)
-
-    σ, u1, v1 = fast_tsvd(W.value)
+    # λ = mean(diag(∂L_∂y' * Wsn * input))
+    λ = meandot(∂L_∂y, Wsn, input)
 
     @inbounds for k1 in 1:dim_out
         for k2 in 1:dim_in
