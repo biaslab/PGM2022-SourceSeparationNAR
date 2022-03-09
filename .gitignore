@@ -4,3 +4,5 @@ models/exports
 logs
 
 Manifest.toml
+
+*.wav
