@@ -32,8 +32,8 @@ end
 function forward!(layer::ResidualLayer{F,<:Memory}) where { F }
 
     # fetch from layer
-    input   = layer.input
-    output  = layer.output
+    input   = getmatinput(layer)
+    output  = getmatoutput(layer)
     f       = layer.f
 
     # copy the input to the output of the layer
