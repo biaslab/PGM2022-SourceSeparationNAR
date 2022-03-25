@@ -52,6 +52,32 @@ function custom_mul!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, X::AbstractMatr
     return Y
 end
 
+function custom_mul!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, ::UniformScaling) where { T <: Real }
+    @turbo Y .= A
+    return Y
+end
+
+function custom_mul!(Y::AbstractMatrix{T}, ::UniformScaling, A::AbstractMatrix{T}) where { T <: Real }
+    @turbo Y .= A
+    return Y
+end
+
+function custom_mul!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, X::Diagonal) where { T <: Real }
+    V = X.diag
+    @turbo for m ∈ axes(A,1), n ∈ axes(A,2)
+        Y[m,n] = A[m,n] * V[n]
+    end
+    return Y
+end
+
+function custom_mul!(Y::AbstractMatrix{T}, A::Diagonal, X::AbstractMatrix{T}) where { T <: Real }
+    V = A.diag
+    @turbo for m ∈ axes(X,1), n ∈ axes(X,2)
+        Y[m,n] = V[m] * X[m,n]
+    end
+    return Y
+end
+
 function custom_mulp(A::AbstractMatrix{T}, x::AbstractVector{T}, b::AbstractVector{T}) where { T <: Real }
 
     # allocate new vector
