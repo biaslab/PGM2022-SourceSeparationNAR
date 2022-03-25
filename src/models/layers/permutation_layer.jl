@@ -1,4 +1,4 @@
-mutable struct PermutationLayer{M <: Union{Nothing,Memory}} <: AbstractLayer
+mutable struct PermutationLayer{M <: Union{Nothing,<:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     P               :: PermutationMatrix
     memory          :: M
@@ -7,7 +7,7 @@ function PermutationLayer(dim::Int; batch_size::Int64=128)
     return PermutationLayer(dim, PermutationMatrix(dim); batch_size=batch_size)
 end
 function PermutationLayer(dim::Int, P::PermutationMatrix; batch_size::Int64=128)
-    return PermutationLayer(dim, P, Memory(dim, batch_size))
+    return PermutationLayer(dim, P, TrainMemory(dim, batch_size))
 end
 
 function forward(layer::PermutationLayer, input)
@@ -20,7 +20,7 @@ function forward(layer::PermutationLayer, input)
     
 end
 
-function forward!(layer::PermutationLayer{<:Memory})
+function forward!(layer::PermutationLayer{<:TrainMemory})
     
     # calculate output of layer
     input = getmatinput(layer)
@@ -32,7 +32,7 @@ function forward!(layer::PermutationLayer{<:Memory})
     
 end
 
-function propagate_error!(layer::PermutationLayer{<:Memory})
+function propagate_error!(layer::PermutationLayer{<:TrainMemory})
 
     # copy input in layer
     gradient_input  = getmatgradientinput(layer)
@@ -46,9 +46,9 @@ function propagate_error!(layer::PermutationLayer{<:Memory})
 
 end
 
-update!(::PermutationLayer{<:Memory}) = return
+update!(::PermutationLayer{<:TrainMemory}) = return
 
-setlr!(::PermutationLayer{<:Memory}, lr) = return
+setlr!(::PermutationLayer{<:TrainMemory}, lr) = return
 
 isinvertible(::PermutationLayer) = true
 

@@ -36,7 +36,7 @@ include("layers/softmax.jl")
 include("helpers.jl")
 
 # Model constructors
-mutable struct Model{L <: Tuple, M <: Union{Nothing,Memory}} <: AbstractModel
+mutable struct Model{L <: Tuple, M <: Union{Nothing,AbstractMemory}} <: AbstractModel
     dim_in          :: Int64
     dim_out         :: Int64
     layers          :: L
@@ -50,7 +50,7 @@ function Model(dim_in, dim_out, layers; batch_size::Int64=128)
         return Model(   dim_in, 
                         dim_out, 
                         layers,
-                        Memory(
+                        TrainMemory(
                             zeros(dim_in,batch_size), 
                             SoftmaxOutput(zeros(dim_out, batch_size)), 
                             zeros(dim_in, batch_size), 
@@ -58,7 +58,7 @@ function Model(dim_in, dim_out, layers; batch_size::Int64=128)
                         ) 
                     )
     else
-        return Model(dim_in, dim_out, layers, Memory(dim_in, dim_out, batch_size))
+        return Model(dim_in, dim_out, layers, TrainMemory(dim_in, dim_out, batch_size))
     end
 end
 
@@ -169,7 +169,7 @@ function invjacobian(model::Model, output::Vector{T}) where { T <: Real }
 end
 
 # forward function with memory
-function forward!(model::Model{<:Tuple,<:Memory}, input)
+function forward!(model::Model{<:Tuple,<:TrainMemory}, input)
 
     # set input in model
     copytoinput!(model, input)
@@ -183,7 +183,7 @@ function forward!(model::Model{<:Tuple,<:Memory}, input)
 end
 
 # internal forward function for model with memory
-function forward!(model::Model{<:Tuple,<:Memory}) 
+function forward!(model::Model{<:Tuple,<:TrainMemory}) 
 
     # fetch layers
     layers = model.layers
@@ -211,7 +211,7 @@ function forward!(model::Model{<:Tuple,<:Memory})
 end
 
 # backpropagation requires memory
-function propagate_error!(model::Model{<:Tuple,<:Memory}, gradient_output::Matrix)
+function propagate_error!(model::Model{<:Tuple,<:TrainMemory}, gradient_output::Matrix)
 
     # set gradient output in model
     copytogradientoutput!(model, gradient_output)
@@ -224,7 +224,7 @@ function propagate_error!(model::Model{<:Tuple,<:Memory}, gradient_output::Matri
     
 end
 
-function propagate_error!(model::Model{<:Tuple,<:Memory})
+function propagate_error!(model::Model{<:Tuple,<:TrainMemory})
 
     # fetch layers
     layers = model.layers
@@ -252,7 +252,7 @@ function propagate_error!(model::Model{<:Tuple,<:Memory})
 end
 
 # update requires memory
-function update!(model::Model{<:Tuple,<:Memory})
+function update!(model::Model{<:Tuple,<:TrainMemory})
 
     # fetch layers
     layers = model.layers
@@ -264,7 +264,7 @@ function update!(model::Model{<:Tuple,<:Memory})
 
 end
 
-function setlr!(model::Model{<:Tuple,<:Memory}, lr)
+function setlr!(model::Model{<:Tuple,<:TrainMemory}, lr)
 
     # fetch layers
     layers = model.layers
@@ -279,6 +279,10 @@ end
 isinvertible(model::Model) = mapreduce(isinvertible, *, model.layers)
 
 nr_params(model::Model) = mapreduce(nr_params, +, model.layers)
+
+function deploy(model::Model)
+
+end
 
 function print_info(model::Model, file::String)
 

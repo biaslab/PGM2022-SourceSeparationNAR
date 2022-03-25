@@ -1,6 +1,6 @@
 using LinearAlgebra, Random
 
-mutable struct DenseSNLayer{M <: Union{Nothing, Memory}, T <: Real, S <: SVDSpectralNormal, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseSNLayer{M <: Union{Nothing, <:AbstractMemory}, T <: Real, S <: SVDSpectralNormal, O2 <: AbstractOptimizer} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     W               :: S
@@ -9,7 +9,14 @@ mutable struct DenseSNLayer{M <: Union{Nothing, Memory}, T <: Real, S <: SVDSpec
     memory          :: M
 end
 function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=GradientDescent)
-    return DenseSNLayer(dim_in, dim_out, SVDSpectralNormal(Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), C), Parameter(rand(initializer[2], dim_out), optimizer), C, Memory(dim_in, dim_out, batch_size))
+    return  DenseSNLayer(
+                dim_in, 
+                dim_out, 
+                SVDSpectralNormal(Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), C), 
+                Parameter(rand(initializer[2], dim_out), optimizer), 
+                C, 
+                TrainMemory(dim_in, dim_out, batch_size)
+            )
 end
 
 function forward(layer::DenseSNLayer, input)
@@ -32,7 +39,7 @@ function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
     return normalize!(layer.W, layer.C)
 end
 
-function forward!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function forward!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
     b     = layer.b.value
@@ -50,7 +57,7 @@ function forward!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function propagate_error!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -103,7 +110,7 @@ function propagate_error!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, 
 
 end
 
-function update!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function update!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # update parameters in layer
     update!(layer.W)
@@ -111,7 +118,7 @@ function update!(layer::DenseSNLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function setlr!(layer::DenseSNLayer{<:Memory,T,O1,O2}, lr) where { T, O1, O2 }
+function setlr!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}, lr) where { T, O1, O2 }
 
     # update parameters in layer
     setlr!(layer.W, lr)

@@ -1,4 +1,4 @@
-mutable struct MvAdditiveLayer{L <: Tuple, M <: Union{Nothing, Memory} } <: AbstractLayer
+mutable struct MvAdditiveLayer{L <: Tuple, M <: Union{Nothing, <:AbstractMemory} } <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: L
@@ -13,11 +13,11 @@ function MvAdditiveLayer(dim::Int, f::L; batch_size::Int64=128) where { L <: Tup
         ind += fk.dim_in 
     end
     @assert ind + f[end].dim_out == dim
-    return MvAdditiveLayer(dim, dim, f, Memory(dim,batch_size))
+    return MvAdditiveLayer(dim, dim, f, TrainMemory(dim,batch_size))
 end
 function MvAdditiveLayer(dim::Int, f; batch_size::Int64=128)
     @assert f.dim_in + f.dim_out == dim
-    return MvAdditiveLayer(dim, dim, (f,), Memory(dim,batch_size))
+    return MvAdditiveLayer(dim, dim, (f,), TrainMemory(dim,batch_size))
 end
 
 function forward(layer::MvAdditiveLayer, input)
@@ -61,7 +61,7 @@ function forward(layer::MvAdditiveLayer, input)
 end
 
 
-function forward!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
+function forward!(layer::MvAdditiveLayer{<:Tuple,<:TrainMemory})
 
     # set output of layer (the additive component)
     input  = layer.input
@@ -111,7 +111,7 @@ function forward!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
     
 end
 
-function propagate_error!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
+function propagate_error!(layer::MvAdditiveLayer{<:Tuple,<:TrainMemory})
 
     # set gradient input of layer (the additive component)
     gradient_input  = getmatgradientinput(layer)
@@ -161,7 +161,7 @@ function propagate_error!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
 
 end
 
-function update!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
+function update!(layer::MvAdditiveLayer{<:Tuple,<:TrainMemory})
     
     # fetch functions
     f = layer.f
@@ -173,7 +173,7 @@ function update!(layer::MvAdditiveLayer{<:Tuple,<:Memory})
     
 end
 
-function setlr!(layer::MvAdditiveLayer{<:Tuple,<:Memory}, lr)
+function setlr!(layer::MvAdditiveLayer{<:Tuple,<:TrainMemory}, lr)
     
     # fetch functions
     f = layer.f

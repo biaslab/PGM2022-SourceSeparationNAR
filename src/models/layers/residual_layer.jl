@@ -2,14 +2,14 @@ using LinearAlgebra, Random
 
 using LoopVectorization: @turbo
 
-mutable struct ResidualLayer{F, M<:Union{Nothing, Memory}} <: AbstractLayer
+mutable struct ResidualLayer{F, M<:Union{Nothing, <:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: F
     memory          :: M
 end
 function ResidualLayer(dim, f; batch_size::Int64=128)
-    return ResidualLayer(dim, dim, f, Memory(dim, batch_size))
+    return ResidualLayer(dim, dim, f, TrainMemory(dim, batch_size))
 end
 
 function forward(layer::ResidualLayer, input)
@@ -29,7 +29,7 @@ function forward(layer::ResidualLayer, input)
     
 end
 
-function forward!(layer::ResidualLayer{F,<:Memory}) where { F }
+function forward!(layer::ResidualLayer{F,<:TrainMemory}) where { F }
 
     # fetch from layer
     input   = getmatinput(layer)
@@ -53,7 +53,7 @@ function forward!(layer::ResidualLayer{F,<:Memory}) where { F }
     
 end
 
-function propagate_error!(layer::ResidualLayer{F,<:Memory}) where { F }
+function propagate_error!(layer::ResidualLayer{F,<:TrainMemory}) where { F }
 
     # fetch from layer
     ∂L_∂x   = getmatgradientinput(layer)
@@ -77,14 +77,14 @@ function propagate_error!(layer::ResidualLayer{F,<:Memory}) where { F }
 
 end
 
-function update!(layer::ResidualLayer{F,<:Memory}) where { F }
+function update!(layer::ResidualLayer{F,<:TrainMemory}) where { F }
 
     # update model in layer
     update!(layer.f)
     
 end
 
-function setlr!(layer::ResidualLayer{F,<:Memory}, lr) where { F }
+function setlr!(layer::ResidualLayer{F,<:TrainMemory}, lr) where { F }
 
     # update learning rate in layer
     setlr!(layer.f, lr)

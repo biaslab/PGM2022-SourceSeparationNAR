@@ -1,4 +1,4 @@
-mutable struct ARLayer{F, M<:Union{Nothing, Memory}} <: AbstractLayer
+mutable struct ARLayer{F, M<:Union{Nothing, <:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: F
@@ -6,7 +6,12 @@ mutable struct ARLayer{F, M<:Union{Nothing, Memory}} <: AbstractLayer
 end
 function ARLayer(dim, f; batch_size::Int64=128)
     @assert dim == f.dim_in + f.dim_out
-    return ARLayer(dim, dim, f, Memory(dim, batch_size))
+    return  ARLayer(
+                dim, 
+                dim, 
+                f, 
+                TrainMemory(dim, batch_size)
+            )
 end
 
 function forward(layer::ARLayer, input::Vector)
@@ -58,7 +63,7 @@ function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
 
 end
 
-function forward!(layer::ARLayer{F,<:Memory}) where { F } 
+function forward!(layer::ARLayer{F,<:TrainMemory}) where { F } 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -98,7 +103,7 @@ function forward!(layer::ARLayer{F,<:Memory}) where { F }
     
 end
 
-function propagate_error!(layer::ARLayer{F,<:Memory}) where { F } 
+function propagate_error!(layer::ARLayer{F,<:TrainMemory}) where { F } 
     
     # fetch input and output gradients in layer
     gradient_input  = getmatgradientinput(layer)
@@ -131,9 +136,9 @@ function propagate_error!(layer::ARLayer{F,<:Memory}) where { F }
     
 end
 
-update!(layer::ARLayer{F,<:Memory}) where { F } = update!(layer.f)
+update!(layer::ARLayer{F,<:TrainMemory}) where { F } = update!(layer.f)
 
-setlr!(layer::ARLayer{F,<:Memory}, lr) where { F } = setlr!(layer.f, lr)
+setlr!(layer::ARLayer{F,<:TrainMemory}, lr) where { F } = setlr!(layer.f, lr)
 
 isinvertible(::ARLayer) = true
 

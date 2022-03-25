@@ -1,6 +1,6 @@
 using LinearAlgebra, Random
 
-mutable struct DenseLayer{M <: Union{Nothing, Memory}, T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseLayer{M <: Union{Nothing, <:AbstractMemory}, T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     W               :: Parameter{Matrix{T}, O1}
@@ -8,7 +8,13 @@ mutable struct DenseLayer{M <: Union{Nothing, Memory}, T <: Real, O1 <: Abstract
     memory          :: M
 end
 function DenseLayer(dim_in, dim_out; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=Adam)
-    return DenseLayer(dim_in, dim_out, Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), Parameter(rand(initializer[2], dim_out), optimizer), Memory(dim_in, dim_out, batch_size))
+    return  DenseLayer(
+                dim_in, 
+                dim_out, 
+                Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), 
+                Parameter(rand(initializer[2], dim_out), optimizer), 
+                TrainMemory(dim_in, dim_out, batch_size)
+            )
 end
 
 function forward(layer::DenseLayer, input)
@@ -30,7 +36,7 @@ function jacobian(layer::DenseLayer, ::Vector{<:Real})
     return layer.W.value
 end
 
-function forward!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function forward!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
     W       = layer.W.value
@@ -46,7 +52,7 @@ function forward!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function propagate_error!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function propagate_error!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -87,7 +93,7 @@ function propagate_error!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2
 
 end
 
-function update!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
+function update!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
 
     # update parameters in layer
     update!(layer.W)
@@ -95,7 +101,7 @@ function update!(layer::DenseLayer{<:Memory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function setlr!(layer::DenseLayer{<:Memory,T,O1,O2}, lr) where { T, O1, O2 }
+function setlr!(layer::DenseLayer{<:TrainMemory,T,O1,O2}, lr) where { T, O1, O2 }
 
     # update parameters in layer
     setlr!(layer.W, lr)

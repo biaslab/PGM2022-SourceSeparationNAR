@@ -1,10 +1,10 @@
-mutable struct ReluLayer{M <: Union{Nothing, Memory}} <: AbstractLayer
+mutable struct ReluLayer{M <: Union{Nothing, <:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     memory          :: M
 end
 function ReluLayer(dim; batch_size::Int64=128)
-    return ReluLayer(dim, dim, Memory(dim,batch_size))
+    return ReluLayer(dim, dim, TrainMemory(dim,batch_size))
 end
 
 function forward(::ReluLayer, input)
@@ -17,7 +17,7 @@ function forward(::ReluLayer, input)
     
 end
 
-function forward!(layer::ReluLayer{<:Memory}) 
+function forward!(layer::ReluLayer{<:TrainMemory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -49,7 +49,7 @@ function jacobian(::ReluLayer, input::Vector{T}) where { T <: Real }
     return J
 end
 
-function propagate_error!(layer::ReluLayer{<:Memory}) 
+function propagate_error!(layer::ReluLayer{<:TrainMemory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -69,9 +69,9 @@ function propagate_error!(layer::ReluLayer{<:Memory})
     
 end
 
-update!(::ReluLayer{<:Memory}) = return
+update!(::ReluLayer{<:TrainMemory}) = return
 
-setlr!(::ReluLayer{<:Memory}, lr) = return
+setlr!(::ReluLayer{<:TrainMemory}, lr) = return
 
 isinvertible(::ReluLayer) = false
 

@@ -1,11 +1,11 @@
-mutable struct LeakyReluLayer{M <: Union{Nothing, Memory}} <: AbstractLayer
+mutable struct LeakyReluLayer{M <: Union{Nothing, <:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     alpha           :: Float64
     memory          :: M
 end
 function LeakyReluLayer(dim; batch_size::Int64=128, alpha::Float64=0.1)
-    return LeakyReluLayer(dim, dim, alpha, Memory(dim, batch_size))
+    return LeakyReluLayer(dim, dim, alpha, TrainMemory(dim, batch_size))
 end
 
 function forward(layer::LeakyReluLayer, input) 
@@ -50,7 +50,7 @@ function jacobian(layer::LeakyReluLayer, input::Vector{T}) where { T <: Real }
     return J
 end
 
-function forward!(layer::LeakyReluLayer{<:Memory}) 
+function forward!(layer::LeakyReluLayer{<:TrainMemory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -65,7 +65,7 @@ function forward!(layer::LeakyReluLayer{<:Memory})
     
 end
 
-function propagate_error!(layer::LeakyReluLayer{<:Memory}) 
+function propagate_error!(layer::LeakyReluLayer{<:TrainMemory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -86,9 +86,9 @@ function propagate_error!(layer::LeakyReluLayer{<:Memory})
     
 end
 
-update!(::LeakyReluLayer{<:Memory}) = return
+update!(::LeakyReluLayer{<:TrainMemory}) = return
 
-setlr!(::LeakyReluLayer{<:Memory}, lr) = return
+setlr!(::LeakyReluLayer{<:TrainMemory}, lr) = return
 
 isinvertible(layer::LeakyReluLayer) = layer.alpha > 0
 

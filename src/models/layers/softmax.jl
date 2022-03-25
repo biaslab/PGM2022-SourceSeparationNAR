@@ -20,13 +20,13 @@ Base.getindex(x::SoftmaxGradientOutput, i, ii) = x.mat[i,ii]
 Base.setindex!(x::SoftmaxGradientOutput, y, i, ii) = (x.mat[i,ii] = y)
 getmat(A::SoftmaxGradientOutput) = A.mat
 
-mutable struct SoftmaxLayer{M <: Union{Nothing,Memory}} <: AbstractLayer
+mutable struct SoftmaxLayer{M <: Union{Nothing,<:AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     memory          :: M
 end
 function SoftmaxLayer(dim; batch_size::Int64=128)
-    return SoftmaxLayer(dim, dim, Memory(zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size))))
+    return SoftmaxLayer(dim, dim, TrainMemory(zeros(dim,batch_size), SoftmaxOutput(zeros(dim,batch_size)), zeros(dim,batch_size), SoftmaxGradientOutput(zeros(dim,batch_size))))
 end
 
 function setoutput!(f::SoftmaxLayer, output)
@@ -50,7 +50,7 @@ function forward(layer::SoftmaxLayer, input)
     
 end
 
-function forward!(layer::SoftmaxLayer{<:Memory}) 
+function forward!(layer::SoftmaxLayer{<:TrainMemory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)
@@ -65,7 +65,7 @@ function forward!(layer::SoftmaxLayer{<:Memory})
     
 end
 
-function propagate_error!(layer::SoftmaxLayer{<:Memory}) 
+function propagate_error!(layer::SoftmaxLayer{<:TrainMemory}) 
     
     # fetch input and output gradients in layer
     input           = getmatinput(layer)
@@ -87,9 +87,9 @@ function propagate_error!(layer::SoftmaxLayer{<:Memory})
     
 end
 
-update!(::SoftmaxLayer{<:Memory}) = return
+update!(::SoftmaxLayer{<:TrainMemory}) = return
 
-setlr!(::SoftmaxLayer{<:Memory}, lr) = return
+setlr!(::SoftmaxLayer{<:TrainMemory}, lr) = return
 
 isinvertible(::SoftmaxLayer) = false
 
