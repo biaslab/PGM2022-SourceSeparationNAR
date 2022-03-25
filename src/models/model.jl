@@ -125,7 +125,7 @@ function jacobian(model::Model, input::Vector{T}) where { T <: Real }
         J_new = jacobian(layer, current_input)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
         # update current jacobian
-        current_J = J_new * current_J
+        current_J = custom_mul(J_new, current_J)
 
         # run model forward
         current_input = forward(layer, current_input)
@@ -156,7 +156,7 @@ function invjacobian(model::Model, output::Vector{T}) where { T <: Real }
         invJ_new = invjacobian(layer, current_output)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
         # update current jacobian
-        current_invJ = invJ_new * current_invJ
+        current_invJ = custom_mul(invJ_new, current_invJ)
 
         # run model backward
         current_output = backward(layer, current_output)
