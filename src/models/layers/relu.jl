@@ -7,18 +7,10 @@ function ReluLayer(dim; batch_size::Int64=128)
     return ReluLayer(dim, dim, Memory(dim,batch_size))
 end
 
-function forward(layer::ReluLayer{Nothing}, input)
+function forward(::ReluLayer, input)
     
-    # fetch input and output in layer
-    output = similar(input)
-    (ax1, ax2) = axes(input)
-
     # update output of layer
-    @turbo for k1 in ax1
-        for k2 in ax2
-            output[k1,k2] = relu(input[k1,k2])
-        end
-    end
+    output = relu.(input)
 
     # return output 
     return output
@@ -42,6 +34,19 @@ function forward!(layer::ReluLayer{<:Memory})
     # return output 
     return output
     
+end
+
+function jacobian(::ReluLayer, input::Vector{T}) where { T <: Real }
+
+    # create jacobian
+    tmp = Vector{Float64}(undef, length(input))
+    @turbo for k in 1:length(input)
+        tmp[k] = !signbit(input[k])
+    end
+    J = Diagonal(tmp)
+
+    # return jacobian
+    return J
 end
 
 function propagate_error!(layer::ReluLayer{<:Memory}) 
