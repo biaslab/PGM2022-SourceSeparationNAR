@@ -40,7 +40,11 @@ function jacobian(layer::LeakyReluLayer, input::Vector{T}) where { T <: Real }
 
     # create jacobian
     alpha = layer.alpha
-    J = diagm([(!signbit(input[k])*(1-alpha) + alpha) for k in 1:length(input)])
+    tmp = Vector{Float64}(undef, length(input))
+    @turbo for k in 1:length(input)
+        tmp[k] = !signbit(input[k])*(1-alpha) + alpha
+    end
+    J = Diagonal(tmp)
 
     # return jacobian
     return J

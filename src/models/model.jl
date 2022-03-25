@@ -122,7 +122,7 @@ function jacobian(model::Model, input::Vector{T}) where { T <: Real }
     @inbounds for layer in layers
         
         # run current layer forward
-        J_new = jacobian(layer, current_input)::Matrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+        J_new = jacobian(layer, current_input)#::AbstractMatrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
     
         # update current jacobian
         current_J = custom_mul(J_new, current_J)
