@@ -26,6 +26,9 @@ function custom_mul(A::AbstractMatrix{T}, X::AbstractMatrix{T}) where { T <: Rea
 
 end
 
+custom_mul(A::AbstractMatrix, ::UniformScaling) = A
+custom_mul(::UniformScaling, A::AbstractMatrix) = A
+
 function custom_mul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::Vector{T}) where { T <: Real }
     (ax1, ax2) = axes(A)
     @turbo for k1 ∈ ax1
