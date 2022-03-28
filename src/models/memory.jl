@@ -17,7 +17,7 @@ mutable struct DeployMemory{T1,T2,T3,T4} <: AbstractMemory
     input           :: T1
     output          :: T2
     jacobian        :: T3
-    jacobian_out    :: T4
+    jacobian_output :: T4
 end
 function DeployMemory(dim_in, dim_out, start_dim)
     return DeployMemory(zeros(dim_in), zeros(dim_out), zeros(dim_in, dim_out), zeros(start_dim, dim_out))
