@@ -100,6 +100,7 @@ function deploy(layer::LeakyReluLayer, start_dim)
         DeployMemory(
             zeros(layer.dim_in), 
             zeros(layer.dim_out), 
+            zeros(layer.dim_in),
             Diagonal(zeros(layer.dim_in)),
             zeros(start_dim, layer.dim_out)
         )

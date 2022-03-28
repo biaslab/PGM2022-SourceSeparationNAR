@@ -42,7 +42,7 @@ function forward!(layer::DenseLayer{<:AbstractMemory,WT,BT}) where { WT, BT }
 end
 
 function jacobian(layer::DenseLayer, ::Vector{<:Real})
-    return layer.W.value
+    return getvalue(layer.W)
 end
 
 
@@ -106,6 +106,27 @@ end
 isinvertible(layer::DenseLayer) = false
 
 nr_params(layer::DenseLayer) = length(layer.W) + length(layer.b)
+
+function deploy(layer::DenseLayer; jacobian_start=IdentityMatrix())
+
+    jacobian_layer = jacobian(layer, randn(layer.dim_in))
+    jacobian_layer_output = jacobian_start * jacobian_layer
+
+
+    return DenseLayer(
+        layer.dim_in,
+        layer.dim_out,
+        getvalue(layer.W),
+        getvalue(layer.b),
+        DeployMemory(
+            randn(layer.dim_in),
+            randn(layer.dim_out),
+            jacobian_layer,
+            jacobian_start,
+            jacobian_layer_output
+        )
+    )
+end
 
 function print_info(layer::DenseLayer, level::Int, io)
 

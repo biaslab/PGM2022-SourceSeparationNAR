@@ -121,6 +121,7 @@ function forward!(layer::ARLayer{F,<:DeployMemory}) where { F }
     
 end
 
+# todo: create specialized companion matrix jacobian when shift = 1
 function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
 
     # fetch information
@@ -128,18 +129,19 @@ function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
     f = layer.f
 
     # initialize jacobian
-    J = zeros(T, len, len)
+    # J = zeros(T, len, len)
 
     # set identity diagonal
-    @inbounds for k = 1:len-f.dim_out
-        J[k+f.dim_out,k] = 1
-    end
+    # @inbounds for k = 1:len-f.dim_out
+    #     J[k+f.dim_out,k] = 1
+    # end
 
     # fetch jacobian of internal function
     J_internal = jacobian(f, input[1:f.dim_in])
 
     # update jacobian of layer with internal jacobian
-    J[1:f.dim_out, 1:f.dim_in] .= J_internal
+    # J[1:f.dim_out, 1:f.dim_in] .= J_internal
+    J = CompanionMatrix(vcat(J_internal[1:f.dim_in], 0))
 
     # return jacobian
     return J
@@ -187,12 +189,22 @@ isinvertible(::ARLayer) = true
 
 nr_params(layer::ARLayer) = nr_params(layer.f)
 
-function deploy(layer::ARLayer, start_dim)
+function deploy(layer::ARLayer; jacobian_start=IdentityMatrix())
+
+    jacobian_layer = jacobian(layer, randn(layer.dim_in))
+    jacobian_layer_out = jacobian_start * jacobian_layer
+
     return ARLayer(
         layer.dim_in,
         layer.dim_out,
-        deploy(layer.f),
-        DeployMemory(layer.dim_in, layer.dim_out, start_dim)
+        deploy(layer.f; jacobian_start=IdentityMatrix()),
+        DeployMemory(
+            randn(layer.dim_in),
+            randn(layer.dim_out),
+            jacobian_layer,
+            jacobian_start,
+            jacobian_layer_out
+        )
     )
 end
 

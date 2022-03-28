@@ -1,8 +1,8 @@
 export Model
 export ARLayer, DenseSNLayer, DenseLayer, iARLayer, LeakyReluLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
-export forward, backward, jacobian, invjacobian
-export forward!, propagate_error!, update!
+export forward, backward, jacobian, invjacobian, forward_jacobian
+export forward!, propagate_error!, update!, forward_jacobian!
 export setlr!, setbatchsize!
 export isinvertible, nr_params, print_info
 export deploy
@@ -175,7 +175,38 @@ function backward(model::Model, output::T) where { T <: AbstractArray }
 end
 
 # jacobian function
-function jacobian(model::Model, input::Vector{T}) where { T <: Real }
+function jacobian(model::Model, input::Vector{<:Real})
+
+    # run model forward and calculate jacobian
+    _, J = forward_jacobian(model, input)
+
+    # return jacobian
+    return J
+
+end
+
+# jacobian function with memory
+function jacobian!(model::Model{<:Tuple,<:DeployMemory}, input::Vector{<:Real})
+
+    # set input in model
+    copytoinput!(model, input)
+
+    # call jacobian function and return
+    return jacobian!(model)
+
+end
+
+function jacobian!(model::Model{<:Tuple,<:DeployMemory})
+
+    # run model forward and calculate jacobian
+    _, J = forward_jacobian!(model)
+
+    # return jacobian
+    return J
+
+end
+
+function forward_jacobian(model::Model, input::Vector{<:Real})
 
     # fetch layers
     layers = model.layers
@@ -201,7 +232,45 @@ function jacobian(model::Model, input::Vector{T}) where { T <: Real }
     end
 
     # return jacobian
-    return current_J
+    return current_input, current_J
+
+end
+
+function forward_jacobian!(model::Model{<:Tuple,<:DeployMemory}, input::Vector{<:Real})
+
+    # set input in model
+    copytoinput!(model, input)
+
+    # return output and jacobian
+    return forward_jacobian!(model)
+
+end
+
+function forward_jacobian!(model::Model)
+
+    # fetch layers
+    layers = model.layers
+
+    # fetch starting input and starting jacobian
+    current_input = getmatinput(model)
+    current_jacobian_input = I
+
+    # propagate through layers
+    @inbounds for layer in layers
+        
+        # set input in layer
+        linktoinput!(layer, current_input)
+
+        # set input jacobian in layer
+        linktojacobianinput!(layer, current_jacobian_input)
+
+        # run current layer forward
+        current_input, current_jacobian_input = forward_jacobian!(layer)#::AbstractMatrix{T} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+
+    end
+
+    # return jacobian
+    return current_input, current_jacobian_input
 
 end
 
@@ -306,15 +375,38 @@ isinvertible(model::Model) = mapreduce(isinvertible, *, model.layers)
 
 nr_params(model::Model) = mapreduce(nr_params, +, model.layers)
 
-function deploy(model::Model)
+# todo: refactor
+function deploy(model::Model; jacobian_start=IdentityMatrix())
+
+    jacobian_model = jacobian(model, randn(model.dim_in))
+    jacobian_model_output = jacobian_start*jacobian_model
+
+    deployed_layers = Vector{AbstractLayer}(undef, length(model.layers))
+
+    jacobian_layer_start = jacobian_start
+
+    for (ind, layer) in enumerate(model.layers)
+
+        deployed_layers[ind] = deploy(layer; jacobian_start=jacobian_layer_start)
+
+        # jacobian 
+        jacobian_layer = jacobian(layer, randn(layer.dim_in))
+
+        # output 
+        jacobian_layer_start = jacobian_layer_start * jacobian_layer
+
+    end
+
     return Model(
         model.dim_in,
         model.dim_out,
-        tuple([deploy(layer, model.dim_in) for layer in model.layers]...),
+        tuple(deployed_layers...),
         DeployMemory(
-            model.dim_in,
-            model.dim_out,
-            model.dim_in
+            zeros(model.dim_in),
+            zeros(model.dim_out),
+            jacobian_model,
+            jacobian_start,
+            jacobian_model_output
         )
     )
 end
