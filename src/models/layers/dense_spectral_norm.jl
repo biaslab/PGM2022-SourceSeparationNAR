@@ -5,7 +5,6 @@ mutable struct DenseSNLayer{M <: Union{Nothing, AbstractMemory}, W <: Union{Matr
     dim_out         :: Int64
     W               :: W
     b               :: B
-    C               :: Float64
     memory          :: M
 end
 function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=GradientDescent)
@@ -14,7 +13,6 @@ function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tu
                 dim_out, 
                 SVDSpectralNormal(Parameter(rand(initializer[1], (dim_out, dim_in)), optimizer), C), 
                 Parameter(rand(initializer[2], dim_out), optimizer), 
-                C, 
                 TrainMemory(dim_in, dim_out, batch_size)
             )
 end
@@ -22,7 +20,7 @@ end
 function forward(layer::DenseSNLayer{M,<:SVDSpectralNormal,<:Parameter}, input) where { M }
     
     # normalize W
-    Wsn = normalize!(layer.W, layer.C)
+    Wsn = normalize!(layer.W)
 
     # fetch from layer
     b = layer.b.value
@@ -65,7 +63,7 @@ function forward!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
     input = getmatinput(layer)
 
     # normalize W
-    Wsn = normalize!(layer.W, layer.C)
+    Wsn = normalize!(layer.W)
 
     # calculate output of layer
     output = getmatoutput(layer)
@@ -115,7 +113,7 @@ function propagate_error!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
     end
 
     # normalize W
-    Wsn = normalize!(layer.W, layer.C)
+    Wsn = normalize!(layer.W)
     σ = layer.W.σ
     u1 = layer.W.u
     v1 = layer.W.v
@@ -128,7 +126,7 @@ function propagate_error!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
     # λ = mean(diag(∂L_∂y' * Wsn * input))
     λ = meandot(∂L_∂y, Wsn, input)
 
-    ibatch_sizeσ = ibatch_size / σ
+    ibatch_sizeσ = ibatch_size / σ # todo: should C also be here?
     @turbo for k1 in 1:dim_out
         for k2 in 1:dim_in
             ∂L_∂W[k1,k2] = (∂L_∂Wsn[k1,k2] - λ * u1[k1] * v1[k2]) * ibatch_sizeσ
@@ -167,9 +165,8 @@ function deploy(layer::DenseSNLayer, start_dim::Int)
     return DenseSNLayer(
         layer.dim_in,
         layer.dim_out,
-        normalize!(layer.W, layer.C),
+        normalize!(layer.W),
         layer.b.value,
-        layer.C,
         DeployMemory(layer.dim_in, layer.dim_out, start_dim)
     )
 end

@@ -4,6 +4,7 @@ mutable struct SVDSpectralNormal{P, T}
     σ       :: Float64
     u       :: Vector{T}
     v       :: Vector{T}
+    C       :: Float64
     changed :: Bool
 end
 function SVDSpectralNormal(A, C)
@@ -15,9 +16,9 @@ function SVDSpectralNormal(A, C)
     # normalize matrix
     Asn ./= (σ / C)
 
-    return SVDSpectralNormal(A, Asn, σ, u, v, false)
+    return SVDSpectralNormal(A, Asn, σ, u, v, C, false)
 end
-function normalize!(obj::SVDSpectralNormal{P,T}, C) where { P, T }
+function normalize!(obj::SVDSpectralNormal{P,T}) where { P, T }
     if obj.changed
         # copy current matrix
         obj.Asn .= obj.A.value
@@ -26,7 +27,7 @@ function normalize!(obj::SVDSpectralNormal{P,T}, C) where { P, T }
         σ, u, v = fast_tsvd(obj.A.value)
 
         # normalize matrix
-        obj.Asn ./= (σ / C)
+        obj.Asn ./= (σ / obj.C)
 
         # save intermediate outputs
         obj.changed = false
