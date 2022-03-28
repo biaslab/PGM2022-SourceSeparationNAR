@@ -91,11 +91,8 @@ function forward!(model::Model{<:Tuple,<:AbstractMemory}, input)
     # set input in model
     copytoinput!(model, input)
 
-    # run model forward
-    output = forward!(model)
-
-    # return output
-    return output
+    # run model forward and return output
+    return forward!(model)
 
 end
 

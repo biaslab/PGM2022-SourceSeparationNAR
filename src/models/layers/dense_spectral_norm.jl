@@ -29,11 +29,8 @@ function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}, input) where { W, B
     # set input
     copytoinput!(layer, input)
 
-    # call forward function 
-    output = forward!(layer, input)
-
-    # return output
-    return output
+    # call forward function and return output
+    return forward!(layer)
     
 end
 

@@ -33,6 +33,89 @@ function forward(layer::iARLayer, input::Vector)
 
 end
 
+function forward!(layer::iARLayer{F,<:AbstractMemory}, input) where { F }
+
+    # set input
+    copytoinput!(layer, input)
+
+    # calculate and return output 
+    return forward!(layer)
+
+end
+
+function forward!(layer::iARLayer{F,<:TrainMemory}) where { F } 
+    
+    # fetch input and output in layer
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    f = layer.f
+    dim_in = f.dim_in
+    dim_out = f.dim_out
+    (sz1, sz2) = size(input)
+
+    # update output of layer (shifted component)
+    @turbo for k1 in 1:dim_in
+        for k2 in 1:sz2
+            output[k1+dim_out,k2] = input[k1,k2]
+        end
+    end 
+
+    # set input of internal function (custom to prevent allocs)
+    f_input = f.memory.input
+    @turbo for k1 in 1:dim_in
+        for k2 in 1:sz2
+            f_input[k1,k2] = input[k1,k2]
+        end
+    end
+
+    # run current function forward
+    f_output = forward!(f)::Matrix{Float64}
+
+    # process current output
+    @turbo for k1 in 1:dim_out
+        for k2 in 1:sz2
+            output[k1,k2] = f_output[k1,k2] + input[k1+dim_in,k2]
+        end
+    end
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::iARLayer{F,<:DeployMemory}) where { F } 
+    
+    # fetch input and output in layer
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    f = layer.f
+    dim_in = f.dim_in
+    dim_out = f.dim_out
+
+    # update output of layer (shifted component)
+    @turbo for k1 in 1:dim_in
+        output[k1+dim_out] = input[k1]
+    end 
+
+    # set input of internal function (custom to prevent allocs)
+    f_input = f.memory.input
+    @turbo for k1 in 1:dim_in
+        f_input[k1] = input[k1]
+    end
+
+    # run current function forward
+    f_output = forward!(f)::Vector{Float64}
+
+    # process current output
+    @turbo for k1 in 1:dim_out
+        output[k1] = f_output[k1] + input[k1+dim_in]
+    end
+
+    # return output 
+    return output
+    
+end
+
 function backward(layer::iARLayer, output::Vector)
 
     input = similar(output)
@@ -114,45 +197,6 @@ function invjacobian(layer::iARLayer, output::Vector{T}) where { T <: Real }
 
 end
 
-function forward!(layer::iARLayer{F,<:TrainMemory}) where { F } 
-    
-    # fetch input and output in layer
-    input  = getmatinput(layer)
-    output = getmatoutput(layer)
-    f = layer.f
-    dim_in = f.dim_in
-    dim_out = f.dim_out
-    (sz1, sz2) = size(input)
-
-    # update output of layer (shifted component)
-    @turbo for k1 in 1:dim_in
-        for k2 in 1:sz2
-            output[k1+dim_out,k2] = input[k1,k2]
-        end
-    end 
-
-    # set input of internal function (custom to prevent allocs)
-    f_input = f.memory.input
-    @turbo for k1 in 1:dim_in
-        for k2 in 1:sz2
-            f_input[k1,k2] = input[k1,k2]
-        end
-    end
-
-    # run current function forward
-    f_output = forward!(f)::Matrix{Float64}
-
-    # process current output
-    @turbo for k1 in 1:dim_out
-        for k2 in 1:sz2
-            output[k1,k2] = f_output[k1,k2] + input[k1+dim_in,k2]
-        end
-    end
-
-    # return output 
-    return output
-    
-end
 
 function propagate_error!(layer::iARLayer{F,<:TrainMemory}) where { F } 
     

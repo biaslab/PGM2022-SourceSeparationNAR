@@ -12,15 +12,22 @@ end
 
 function forward(layer::PermutationLayer, input)
     
-    # calculate output of layer
-    output = mul(layer.P, input)
-
-    # return output 
-    return output
+    # calculate and return output of layer
+    return mul(layer.P, input)
     
 end
 
-function forward!(layer::PermutationLayer{<:TrainMemory})
+function forward!(layer::PermutationLayer{<:AbstractMemory}, input)
+
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function and return output
+    return forward!(layer)
+
+end
+
+function forward!(layer::PermutationLayer{<:AbstractMemory})
     
     # calculate output of layer
     input = getmatinput(layer)

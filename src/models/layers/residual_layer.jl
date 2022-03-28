@@ -16,10 +16,9 @@ function forward(layer::ResidualLayer, input)
 
     # fetch from layer
     output  = copy(input)
-    f       = layer.f
 
     # run internal model forward
-    output_f = forward(f, input)
+    output_f = forward(layer.f, input)
 
     # add output of internal model to layer output
     @turbo output .+= output_f
@@ -29,7 +28,17 @@ function forward(layer::ResidualLayer, input)
     
 end
 
-function forward!(layer::ResidualLayer{F,<:TrainMemory}) where { F }
+function forward!(layer::ResidualLayer{F,<:AbstractMemory}, input) where { F }
+
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function and return output
+    return forward!(layer, input)
+
+end
+
+function forward!(layer::ResidualLayer{F,<:AbstractMemory}) where { F }
 
     # fetch from layer
     input   = getmatinput(layer)

@@ -9,12 +9,19 @@ end
 
 function forward(::ReluLayer, input)
     
-    # update output of layer
-    output = relu.(input)
-
-    # return output 
-    return output
+    # update output of layer and return
+    return relu.(input)
     
+end
+
+function forward!(layer::ReluLayer{<:AbstractMemory}, input)
+
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function and return output
+    return forward!(layer)
+
 end
 
 function forward!(layer::ReluLayer{<:TrainMemory}) 
@@ -29,6 +36,23 @@ function forward!(layer::ReluLayer{<:TrainMemory})
         for k2 in ax2
             output[k1,k2] = relu(input[k1,k2])
         end
+    end
+
+    # return output 
+    return output
+    
+end
+
+function forward!(layer::ReluLayer{<:DeployMemory}) 
+    
+    # fetch input and output in layer
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    dim    = layer.dim_in
+
+    # update output of layer
+    @turbo for k in 1:dim
+        output[k] = relu(input[k])
     end
 
     # return output 

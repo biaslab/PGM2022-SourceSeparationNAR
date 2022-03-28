@@ -50,7 +50,17 @@ function forward(layer::SoftmaxLayer, input)
     
 end
 
-function forward!(layer::SoftmaxLayer{<:TrainMemory}) 
+function forward!(layer::SoftmaxLayer{<:AbstractMemory}, input)
+
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function and return output
+    return forward!(layer)
+
+end
+
+function forward!(layer::SoftmaxLayer{<:AbstractMemory}) 
     
     # fetch input and output in layer
     input  = getmatinput(layer)

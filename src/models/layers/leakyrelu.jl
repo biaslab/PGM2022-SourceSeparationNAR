@@ -12,13 +12,9 @@ function forward(layer::LeakyReluLayer, input)
     
     # fetch input and output in layer
     output = similar(input)
-    alpha  = layer.alpha
 
     # update output of layer
-    output = leakyrelu!(output, input, alpha)
-
-    # return output 
-    return output
+    return leakyrelu!(output, input, layer.alpha)
     
 end
 
@@ -27,26 +23,15 @@ function forward!(layer::LeakyReluLayer{<:AbstractMemory}, input)
     # set input
     copytoinput!(layer, input)
 
-    # call forward function 
-    output = forward!(layer, input)
-
-    # return output
-    return output
+    # call forward function and return output
+    return forward!(layer)
 
 end
 
 function forward!(layer::LeakyReluLayer{<:AbstractMemory}) 
-    
-    # fetch input and output in layer
-    input  = getmatinput(layer)
-    output = getmatoutput(layer)
-    alpha  = layer.alpha
 
-    # update output of layer
-    output = leakyrelu!(output, input, alpha)
-
-    # return output 
-    return output
+    # update and return output of layer
+    return leakyrelu!(getmatoutput(layer), getmatinput(layer), layer.alpha)
     
 end
 

@@ -43,11 +43,8 @@ function forward!(layer::ARLayer{F,<:AbstractMemory}, input) where { F }
     # set input in model
     copytoinput!(layer, input)
 
-    # run model forward
-    output = forward!(layer)
-
-    # return output
-    return output
+    # run model forward and return output
+    return forward!(layer)
 
 end
 
