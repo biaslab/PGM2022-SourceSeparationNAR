@@ -42,6 +42,7 @@ function update!(obj::SVDSpectralNormal)
 end
 setlr!(obj::SVDSpectralNormal, lr)= setlr!(obj.A, lr)
 Base.length(obj::SVDSpectralNormal) = length(obj.A)
+getmat(W::SVDSpectralNormal) = normalize!(W)
 
 function fast_tsvd(A; epsilon=1e-10)
 

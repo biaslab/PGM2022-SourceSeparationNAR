@@ -85,6 +85,76 @@ function forward(model::Model, input::T) where { T <: AbstractArray }
 
 end
 
+# forward function with memory
+function forward!(model::Model{<:Tuple,<:AbstractMemory}, input)
+
+    # set input in model
+    copytoinput!(model, input)
+
+    # run model forward
+    output = forward!(model)
+
+    # return output
+    return output
+
+end
+
+# internal forward function for model with memory
+function forward!(model::Model{<:Tuple,<:TrainMemory}) 
+
+    # fetch layers
+    layers = model.layers
+
+    # set current input
+    current_input = getmatinput(model)
+
+    # propagate through layers
+    @inbounds for layer in layers
+
+        # set input in layer
+        linktoinput!(layer, current_input)
+        
+        # run current layer forward
+        current_input = forward!(layer)::Matrix{Float64} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+    end
+
+    # update output of model
+    copytooutput!(model, current_input)
+
+    # return output
+    return getoutput(model)
+    
+end
+
+# internal forward function for model with memory
+function forward!(model::Model{<:Tuple,<:DeployMemory}) 
+
+    # fetch layers
+    layers = model.layers
+
+    # set current input
+    current_input = getmatinput(model)
+
+    # propagate through layers
+    @inbounds for layer in layers
+
+        # set input in layer
+        linktoinput!(layer, current_input)
+        
+        # run current layer forward
+        current_input = forward!(layer)::Vector{Float64} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
+    
+    end
+
+    # update output of model
+    copytooutput!(model, current_input)
+
+    # return output
+    return getoutput(model)
+    
+end
+
 # backward function
 function backward(model::Model, output::T) where { T <: AbstractArray }
 
@@ -167,48 +237,6 @@ function invjacobian(model::Model, output::Vector{T}) where { T <: Real }
     # return inverse jacobian
     return current_invJ
 
-end
-
-# forward function with memory
-function forward!(model::Model{<:Tuple,<:TrainMemory}, input)
-
-    # set input in model
-    copytoinput!(model, input)
-
-    # run model forward
-    output = forward!(model)
-
-    # return output
-    return output
-
-end
-
-# internal forward function for model with memory
-function forward!(model::Model{<:Tuple,<:TrainMemory}) 
-
-    # fetch layers
-    layers = model.layers
-
-    # set current input
-    current_input = getmatinput(model)
-
-    # propagate through layers
-    @inbounds for layer in layers
-
-        # set input in layer
-        linktoinput!(layer, current_input)
-        
-        # run current layer forward
-        current_input = forward!(layer)::Matrix{Float64} # for type stability. Having more than 3 different layer types results into Tuple{Any}, from which the output of forward! cannot be determined anymore
-    
-    end
-
-    # update output of model
-    copytooutput!(model, current_input)
-
-    # return output
-    return getoutput(model)
-    
 end
 
 # backpropagation requires memory

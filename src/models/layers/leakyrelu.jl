@@ -22,6 +22,34 @@ function forward(layer::LeakyReluLayer, input)
     
 end
 
+function forward!(layer::LeakyReluLayer{<:AbstractMemory}, input)
+
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function 
+    output = forward!(layer, input)
+
+    # return output
+    return output
+
+end
+
+function forward!(layer::LeakyReluLayer{<:AbstractMemory}) 
+    
+    # fetch input and output in layer
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    alpha  = layer.alpha
+
+    # update output of layer
+    output = leakyrelu!(output, input, alpha)
+
+    # return output 
+    return output
+    
+end
+
 function backward(layer::LeakyReluLayer, output)
 
     # fetch input and output in layer
@@ -48,21 +76,6 @@ function jacobian(layer::LeakyReluLayer, input::Vector{T}) where { T <: Real }
 
     # return jacobian
     return J
-end
-
-function forward!(layer::LeakyReluLayer{<:TrainMemory}) 
-    
-    # fetch input and output in layer
-    input  = getmatinput(layer)
-    output = getmatoutput(layer)
-    alpha  = layer.alpha
-
-    # update output of layer
-    output = leakyrelu!(output, input, alpha)
-
-    # return output 
-    return output
-    
 end
 
 function propagate_error!(layer::LeakyReluLayer{<:TrainMemory}) 
@@ -93,6 +106,20 @@ setlr!(::LeakyReluLayer{<:TrainMemory}, lr) = return
 isinvertible(layer::LeakyReluLayer) = layer.alpha > 0
 
 nr_params(::LeakyReluLayer) = 0
+
+function deploy(layer::LeakyReluLayer, start_dim)
+    return LeakyReluLayer(
+        layer.dim_in,
+        layer.dim_out,
+        layer.alpha,
+        DeployMemory(
+            zeros(layer.dim_in), 
+            zeros(layer.dim_out), 
+            Diagonal(zeros(layer.dim_in)),
+            zeros(start_dim, layer.dim_out)
+        )
+    )
+end
 
 function print_info(layer::LeakyReluLayer, level::Int, io)
 

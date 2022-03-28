@@ -15,7 +15,7 @@ setoutput!(f, output)                   = f.memory.output = output
 setgradientinput!(f, gradient_input)    = f.memory.gradient_input = gradient_input
 setgradientoutput!(f, gradient_output)  = f.memory.gradient_output = gradient_output
 
-function copytoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
+function copytoinput!(f, input::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch input
     f_input = getmatinput(f)
@@ -37,7 +37,7 @@ function copytoinput!(f, input::T) where { T <: Real }
 
 end
 
-function linktoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix }
+function linktoinput!(f, input::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch input
     f_input = getinput(f)
@@ -52,7 +52,7 @@ function linktoinput!(f, input::T; check::Bool=true) where { T <: AbstractMatrix
 
 end
 
-function copytooutput!(f, output::T; check::Bool=true) where { T <: AbstractMatrix }
+function copytooutput!(f, output::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch output
     f_output = getmatoutput(f)
@@ -74,7 +74,7 @@ function copytooutput!(f, output::T) where { T <: Real }
 
 end
 
-function copytogradientinput!(f, gradient_input::T; check::Bool=true) where { T <: AbstractMatrix }
+function copytogradientinput!(f, gradient_input::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch gradient input
     f_gradient_input = getmatgradientinput(f)
@@ -96,7 +96,7 @@ function copytogradientinput!(f, gradient_input::T) where { T <: Real }
 
 end
 
-function copytogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractMatrix }
+function copytogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch gradient output
     f_gradient_output = getmatgradientoutput(f)
@@ -118,7 +118,7 @@ function copytogradientoutput!(f, gradient_output::T) where { T <: Real }
 
 end
 
-function linktogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractMatrix }
+function linktogradientoutput!(f, gradient_output::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch gradient output
     f_gradient_output = getmatgradientoutput(f)

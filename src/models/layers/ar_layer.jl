@@ -38,28 +38,16 @@ function forward(layer::ARLayer, input::Vector)
 
 end
 
-function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
+function forward!(layer::ARLayer{F,<:AbstractMemory}, input) where { F }
 
-    # fetch information
-    len = length(input)
-    f = layer.f
+    # set input in model
+    copytoinput!(layer, input)
 
-    # initialize jacobian
-    J = zeros(T, len, len)
+    # run model forward
+    output = forward!(layer)
 
-    # set identity diagonal
-    @inbounds for k = 1:len-f.dim_out
-        J[k+f.dim_out,k] = 1
-    end
-
-    # fetch jacobian of internal function
-    J_internal = jacobian(f, input[1:f.dim_in])
-
-    # update jacobian of layer with internal jacobian
-    J[1:f.dim_out, 1:f.dim_in] .= J_internal
-
-    # return jacobian
-    return J
+    # return output
+    return output
 
 end
 
@@ -101,6 +89,64 @@ function forward!(layer::ARLayer{F,<:TrainMemory}) where { F }
     # return output 
     return output
     
+end
+
+function forward!(layer::ARLayer{F,<:DeployMemory}) where { F } 
+    
+    # fetch input and output in layer
+    input  = getmatinput(layer)
+    output = getmatoutput(layer)
+    f = layer.f
+    dim_in = f.dim_in
+    dim_out = f.dim_out
+
+    # update output of layer (shifted component)
+    @turbo for k1 in 1:dim_in
+        output[k1+dim_out] = input[k1]
+    end 
+
+    # set input of internal function (custom to prevent allocs)
+    f_input = f.memory.input
+    @turbo for k1 in 1:dim_in
+        f_input[k1] = input[k1]
+    end
+
+    # run current function forward
+    f_output = forward!(f)::Vector{Float64}
+
+    # process current output
+    @turbo for k1 in 1:dim_out
+        output[k1] = f_output[k1]
+    end
+
+    # return output 
+    return output
+    
+end
+
+function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
+
+    # fetch information
+    len = length(input)
+    f = layer.f
+
+    # initialize jacobian
+    J = zeros(T, len, len)
+
+    # set identity diagonal
+    @inbounds for k = 1:len-f.dim_out
+        J[k+f.dim_out,k] = 1
+    end
+
+    # fetch jacobian of internal function
+    J_internal = jacobian(f, input[1:f.dim_in])
+
+    # update jacobian of layer with internal jacobian
+    J[1:f.dim_out, 1:f.dim_in] .= J_internal
+
+    # return jacobian
+    return J
+
 end
 
 function propagate_error!(layer::ARLayer{F,<:TrainMemory}) where { F } 

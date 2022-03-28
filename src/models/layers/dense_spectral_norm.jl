@@ -19,7 +19,7 @@ function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tu
             )
 end
 
-function forward(layer::DenseSNLayer, input)
+function forward(layer::DenseSNLayer{M,<:SVDSpectralNormal,<:Parameter}, input) where { M }
     
     # normalize W
     Wsn = normalize!(layer.W, layer.C)
@@ -35,8 +35,27 @@ function forward(layer::DenseSNLayer, input)
     
 end
 
-function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
-    return normalize!(layer.W, layer.C)
+function forward(layer::DenseSNLayer{M,<:Matrix,<:Vector}, input) where { M }
+
+    # calculate output of layer
+    output = custom_mulp(layer.W, input, layer.b)
+
+    # return output
+    return output
+
+end
+
+function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}, input) where { W, B }
+    
+    # set input
+    copytoinput!(layer, input)
+
+    # call forward function 
+    output = forward!(layer, input)
+
+    # return output
+    return output
+    
 end
 
 function forward!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
@@ -55,6 +74,20 @@ function forward!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
     # return output 
     return output
     
+end
+
+function forward!(layer::DenseSNLayer{<:DeployMemory,W,B}) where { W, B }
+
+    # calculate output from layer
+    output = custom_mulp!(layer.memory.output, layer.W, layer.memory.input, layer.b)
+
+    # return output 
+    return output
+    
+end
+
+function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
+    return getmat(layer.W)
 end
 
 function propagate_error!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
@@ -130,12 +163,13 @@ isinvertible(layer::DenseSNLayer) = false
 
 nr_params(layer::DenseSNLayer) = length(layer.W) + length(layer.b)
 
-function deploy(layer::DenseSNLayer, start_dim)
-    return DenseLayer(
+function deploy(layer::DenseSNLayer, start_dim::Int)
+    return DenseSNLayer(
         layer.dim_in,
         layer.dim_out,
         normalize!(layer.W, layer.C),
         layer.b.value,
+        layer.C,
         DeployMemory(layer.dim_in, layer.dim_out, start_dim)
     )
 end
