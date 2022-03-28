@@ -17,30 +17,11 @@ function DenseSNLayer(dim_in, dim_out, C; batch_size::Int64=128, initializer::Tu
             )
 end
 
-function forward(layer::DenseSNLayer{M,<:SVDSpectralNormal,<:Parameter}, input) where { M }
+function forward(layer::DenseSNLayer, input)
+
+    # calculate and return output of layer
+    return custom_mulp(getmat(layer.W), input, getvalue(layer.b))
     
-    # normalize W
-    Wsn = normalize!(layer.W)
-
-    # fetch from layer
-    b = layer.b.value
-
-    # calculate output of layer
-    output = custom_mulp(Wsn, input, b)
-    
-    # return output 
-    return output
-    
-end
-
-function forward(layer::DenseSNLayer{M,<:Matrix,<:Vector}, input) where { M }
-
-    # calculate output of layer
-    output = custom_mulp(layer.W, input, layer.b)
-
-    # return output
-    return output
-
 end
 
 function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}, input) where { W, B }
@@ -56,31 +37,10 @@ function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}, input) where { W, B
     
 end
 
-function forward!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
-
-    # fetch from layer
-    b     = layer.b.value
-    input = getmatinput(layer)
-
-    # normalize W
-    Wsn = normalize!(layer.W)
+function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}) where { W, B }
 
     # calculate output of layer
-    output = getmatoutput(layer)
-    custom_mulp!(output, Wsn, input, b)
-
-    # return output 
-    return output
-    
-end
-
-function forward!(layer::DenseSNLayer{<:DeployMemory,W,B}) where { W, B }
-
-    # calculate output from layer
-    output = custom_mulp!(layer.memory.output, layer.W, layer.memory.input, layer.b)
-
-    # return output 
-    return output
+    return custom_mulp!(getmatoutput(layer), getmat(layer.W), getmatinput(layer), getvalue(layer.b))
     
 end
 

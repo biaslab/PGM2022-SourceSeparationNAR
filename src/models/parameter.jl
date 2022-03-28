@@ -47,3 +47,6 @@ update!(x::Parameter) = update!(x.value, x.optimizer, x.gradient)
 function setlr!(x::Parameter, lr)
     x.optimizer.λ = lr
 end
+
+getvalue(x::Parameter) = x.value
+getvalue(x::AbstractArray) = x

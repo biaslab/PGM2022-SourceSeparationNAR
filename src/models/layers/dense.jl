@@ -1,6 +1,6 @@
 using LinearAlgebra, Random
 
-mutable struct DenseLayer{M <: Union{Nothing, AbstractMemory}, T <: Real, W <: Union{Matrix, Parameter}, B <: Union{Vector, Parameter}} <: AbstractLayer
+mutable struct DenseLayer{M <: Union{Nothing, AbstractMemory}, W <: Union{Matrix, Parameter}, B <: Union{Vector, Parameter}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     W               :: W
@@ -17,42 +17,36 @@ function DenseLayer(dim_in, dim_out; batch_size::Int64=128, initializer::Tuple=(
             )
 end
 
-function forward(layer::DenseLayer, input)
-
-    # fetch from layer
-    W       = layer.W.value
-    b       = layer.b.value
-
-    # calculate output of layer
-    output = custom_mulp(W, input, b)
-    # output = W*input .+ b
+function forward(layer::DenseLayer, input) 
     
-    # return output 
-    return output
+    # calculate and return output
+    return custom_mulp(getvalue(layer.W), input, getvalue(layer.b))
+
+end
+
+function forward!(layer::DenseLayer{<:AbstractMemory,WT,BT}, input) where { WT, BT }
+
+    # set input
+    copytoinput!(layer, input)
+
+    # calculate and return output 
+    return forward!(layer)
     
+end
+
+function forward!(layer::DenseLayer{<:AbstractMemory,WT,BT}) where { WT, BT }
+
+    # calculate and return output
+    return custom_mulp!(getmatoutput(output), getvalue(layer.W), getmatinput(input), getvalue(layer.b))
+
 end
 
 function jacobian(layer::DenseLayer, ::Vector{<:Real})
     return layer.W.value
 end
 
-function forward!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
 
-    # fetch from layer
-    W       = layer.W.value
-    b       = layer.b.value
-    input   = getmatinput(layer)
-
-    # calculate output of layer
-    output = getmatoutput(layer)
-    custom_mulp!(output, W, input, b)
-
-    # return output 
-    return output
-    
-end
-
-function propagate_error!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
+function propagate_error!(layer::DenseLayer{<:TrainMemory,WT,BT}) where { WT, BT }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -93,7 +87,7 @@ function propagate_error!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, W
 
 end
 
-function update!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
+function update!(layer::DenseLayer{<:TrainMemory,WT,BT}) where { WT, BT }
 
     # update parameters in layer
     update!(layer.W)
@@ -101,7 +95,7 @@ function update!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
     
 end
 
-function setlr!(layer::DenseLayer{<:TrainMemory,T,WT,BT}, lr) where { T, WT, BT }
+function setlr!(layer::DenseLayer{<:TrainMemory,WT,BT}, lr) where { WT, BT }
 
     # update parameters in layer
     setlr!(layer.W, lr)
