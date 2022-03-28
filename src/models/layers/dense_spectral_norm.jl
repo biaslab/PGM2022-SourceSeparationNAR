@@ -1,10 +1,10 @@
 using LinearAlgebra, Random
 
-mutable struct DenseSNLayer{M <: Union{Nothing, <:AbstractMemory}, T <: Real, S <: SVDSpectralNormal, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseSNLayer{M <: Union{Nothing, AbstractMemory}, W <: Union{Matrix, SVDSpectralNormal}, B <: Union{Vector, Parameter}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    W               :: S
-    b               :: Parameter{Vector{T}, O2}
+    W               :: W
+    b               :: B
     C               :: Float64
     memory          :: M
 end
@@ -39,7 +39,7 @@ function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
     return normalize!(layer.W, layer.C)
 end
 
-function forward!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function forward!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
 
     # fetch from layer
     b     = layer.b.value
@@ -57,7 +57,7 @@ function forward!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 
     
 end
 
-function propagate_error!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function propagate_error!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -110,7 +110,7 @@ function propagate_error!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T,
 
 end
 
-function update!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function update!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
 
     # update parameters in layer
     update!(layer.W)
@@ -118,7 +118,7 @@ function update!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function setlr!(layer::DenseSNLayer{<:TrainMemory,T,O1,O2}, lr) where { T, O1, O2 }
+function setlr!(layer::DenseSNLayer{<:TrainMemory,W,B}, lr) where { W, B }
 
     # update parameters in layer
     setlr!(layer.W, lr)
@@ -129,6 +129,16 @@ end
 isinvertible(layer::DenseSNLayer) = false
 
 nr_params(layer::DenseSNLayer) = length(layer.W) + length(layer.b)
+
+function deploy(layer::DenseSNLayer, start_dim)
+    return DenseLayer(
+        layer.dim_in,
+        layer.dim_out,
+        normalize!(layer.W, layer.C),
+        layer.b.value,
+        DeployMemory(layer.dim_in, layer.dim_out, start_dim)
+    )
+end
 
 function print_info(layer::DenseSNLayer, level::Int, io)
 

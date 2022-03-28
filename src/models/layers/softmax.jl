@@ -20,7 +20,7 @@ Base.getindex(x::SoftmaxGradientOutput, i, ii) = x.mat[i,ii]
 Base.setindex!(x::SoftmaxGradientOutput, y, i, ii) = (x.mat[i,ii] = y)
 getmat(A::SoftmaxGradientOutput) = A.mat
 
-mutable struct SoftmaxLayer{M <: Union{Nothing,<:AbstractMemory}} <: AbstractLayer
+mutable struct SoftmaxLayer{M <: Union{Nothing,AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     memory          :: M

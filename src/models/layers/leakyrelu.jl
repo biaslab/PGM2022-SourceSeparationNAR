@@ -1,4 +1,4 @@
-mutable struct LeakyReluLayer{M <: Union{Nothing, <:AbstractMemory}} <: AbstractLayer
+mutable struct LeakyReluLayer{M <: Union{Nothing, AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     alpha           :: Float64

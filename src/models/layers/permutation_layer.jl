@@ -1,4 +1,4 @@
-mutable struct PermutationLayer{M <: Union{Nothing,<:AbstractMemory}} <: AbstractLayer
+mutable struct PermutationLayer{M <: Union{Nothing,AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     P               :: PermutationMatrix
     memory          :: M

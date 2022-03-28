@@ -2,7 +2,7 @@ using LinearAlgebra, Random
 
 using LoopVectorization: @turbo
 
-mutable struct ResidualLayer{F, M<:Union{Nothing, <:AbstractMemory}} <: AbstractLayer
+mutable struct ResidualLayer{F, M<:Union{Nothing, AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: F

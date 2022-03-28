@@ -1,4 +1,4 @@
-mutable struct ARLayer{F, M<:Union{Nothing, <:AbstractMemory}} <: AbstractLayer
+mutable struct ARLayer{F, M<:Union{Nothing, AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: F
@@ -143,6 +143,15 @@ setlr!(layer::ARLayer{F,<:TrainMemory}, lr) where { F } = setlr!(layer.f, lr)
 isinvertible(::ARLayer) = true
 
 nr_params(layer::ARLayer) = nr_params(layer.f)
+
+function deploy(layer::ARLayer, start_dim)
+    return ARLayer(
+        layer.dim_in,
+        layer.dim_out,
+        deploy(layer.f),
+        DeployMemory(layer.dim_in, layer.dim_out, start_dim)
+    )
+end
 
 function print_info(layer::ARLayer, level::Int, io)
 

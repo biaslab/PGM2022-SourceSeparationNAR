@@ -5,6 +5,7 @@ export forward, backward, jacobian, invjacobian
 export forward!, propagate_error!, update!
 export setlr!, setbatchsize!
 export isinvertible, nr_params, print_info
+export deploy
 
 using LinearAlgebra: I
 
@@ -281,7 +282,16 @@ isinvertible(model::Model) = mapreduce(isinvertible, *, model.layers)
 nr_params(model::Model) = mapreduce(nr_params, +, model.layers)
 
 function deploy(model::Model)
-
+    return Model(
+        model.dim_in,
+        model.dim_out,
+        tuple([deploy(layer, model.dim_in) for layer in model.layers]...),
+        DeployMemory(
+            model.dim_in,
+            model.dim_out,
+            model.dim_in
+        )
+    )
 end
 
 function print_info(model::Model, file::String)

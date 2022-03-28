@@ -1,10 +1,10 @@
 using LinearAlgebra, Random
 
-mutable struct DenseLayer{M <: Union{Nothing, <:AbstractMemory}, T <: Real, O1 <: AbstractOptimizer, O2 <: AbstractOptimizer} <: AbstractLayer
+mutable struct DenseLayer{M <: Union{Nothing, AbstractMemory}, T <: Real, W <: Union{Matrix, Parameter}, B <: Union{Vector, Parameter}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
-    W               :: Parameter{Matrix{T}, O1}
-    b               :: Parameter{Vector{T}, O2}
+    W               :: W
+    b               :: B
     memory          :: M
 end
 function DenseLayer(dim_in, dim_out; batch_size::Int64=128, initializer::Tuple=(GlorotUniform(dim_in, dim_out), Zeros()), optimizer::Type{<:AbstractOptimizer}=Adam)
@@ -36,7 +36,7 @@ function jacobian(layer::DenseLayer, ::Vector{<:Real})
     return layer.W.value
 end
 
-function forward!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function forward!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
 
     # fetch from layer
     W       = layer.W.value
@@ -52,7 +52,7 @@ function forward!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function propagate_error!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function propagate_error!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
 
     # fetch from layer
     dim_in  = layer.dim_in
@@ -93,7 +93,7 @@ function propagate_error!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O
 
 end
 
-function update!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
+function update!(layer::DenseLayer{<:TrainMemory,T,WT,BT}) where { T, WT, BT }
 
     # update parameters in layer
     update!(layer.W)
@@ -101,7 +101,7 @@ function update!(layer::DenseLayer{<:TrainMemory,T,O1,O2}) where { T, O1, O2 }
     
 end
 
-function setlr!(layer::DenseLayer{<:TrainMemory,T,O1,O2}, lr) where { T, O1, O2 }
+function setlr!(layer::DenseLayer{<:TrainMemory,T,WT,BT}, lr) where { T, WT, BT }
 
     # update parameters in layer
     setlr!(layer.W, lr)

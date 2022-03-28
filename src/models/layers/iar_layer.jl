@@ -1,4 +1,4 @@
-mutable struct iARLayer{F, M<:Union{Nothing, <:AbstractMemory}} <: AbstractLayer
+mutable struct iARLayer{F, M<:Union{Nothing, AbstractMemory}} <: AbstractLayer
     dim_in          :: Int64
     dim_out         :: Int64
     f               :: F
