@@ -1,9 +1,9 @@
 module SourceSeparationINN
 
     include("algebra/cholesky.jl")
+    include("algebra/identity_matrix.jl")
     include("algebra/companion_matrix.jl")
     include("algebra/custom_mul.jl")
-    include("algebra/identity_matrix.jl")
     include("algebra/logsumexp.jl")
     include("algebra/permutation_matrix.jl")
     include("algebra/svd.jl")
