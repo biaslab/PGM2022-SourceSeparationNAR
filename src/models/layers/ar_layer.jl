@@ -122,7 +122,53 @@ function forward!(layer::ARLayer{F,<:DeployMemory}) where { F }
 end
 
 # todo: create specialized companion matrix jacobian when shift = 1
-function jacobian(layer::ARLayer, input::Vector{T}) where { T <: Real }
+function forward_jacobian!(layer::ARLayer)
+    
+    # fetch internal
+    input_layer = getmatinput(layer)
+    output_layer = getmatoutput(layer)
+    jacobian_layer = getmatjacobian(layer)
+    f = layer.f
+    dim_in = f.dim_in
+    dim_out = f.dim_out
+
+    # copy input to internal
+    for k = 1:dim_in
+        f.memory.input[k] = layer.memory.input[k]
+    end
+
+    # copy gradient to internal
+    linktojacobianinput!(f, IdentityMatrix())
+
+    # propagate internal
+    f_output, f_jacobian = forward_jacobian!(f)
+
+    # update output from internal output
+    @turbo for k1 in 1:dim_out
+        output_layer[k1] = f_output[k1]
+    end
+    @turbo for k in 1:dim_in
+        output_layer[k+dim_out] = input_layer[k]
+    end 
+
+    # update jacobian from internal jacobian
+    for k = 1:dim_in
+        jacobian_layer.θ[k] = f_jacobian[k]
+    end
+    for k = dim_in+1:layer.dim_out
+        jacobian_layer.θ[k] = 0.0
+    end
+
+    # calculate jacobian at output
+    jacobian_output_layer = custom_mul!(getmatjacobianoutput(layer), jacobian_layer, getmatjacobianinput(layer))
+
+    # return output and jacobian
+    return output_layer, jacobian_output_layer
+
+end
+
+# todo: create specialized companion matrix jacobian when shift = 1
+function jacobian(layer::ARLayer, input::Vector{<:Real})
 
     # fetch information
     len = length(input)
@@ -192,7 +238,7 @@ nr_params(layer::ARLayer) = nr_params(layer.f)
 function deploy(layer::ARLayer; jacobian_start=IdentityMatrix())
 
     jacobian_layer = jacobian(layer, randn(layer.dim_in))
-    jacobian_layer_out = jacobian_start * jacobian_layer
+    jacobian_layer_out = jacobian_layer * jacobian_start
 
     return ARLayer(
         layer.dim_in,

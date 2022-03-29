@@ -179,14 +179,14 @@ function copytojacobianinput!(f, jacobian_input::T; check::Bool=true) where { T 
 
 end
 
-function copytojacobianinput!(f, input::T) where { T <: Real }
+function copytojacobianinput!(f, jacobian_input::T) where { T <: Real }
     
     # set input
     f.memory.jacobian_input = jacobian_input
 
 end
 
-function linktojacobianinput!(f, input::T; check::Bool=true) where { T <: AbstractArray }
+function linktojacobianinput!(f, jacobian_input::T; check::Bool=true) where { T <: AbstractArray }
     
     # fetch jacobian input
     f_jacobian_input = getjacobianinput(f)
@@ -197,7 +197,14 @@ function linktojacobianinput!(f, input::T; check::Bool=true) where { T <: Abstra
     end
 
     # set input
-    setinput!(f, jacobian_input)
+    setjacobianinput!(f, jacobian_input)
+
+end
+
+function linktojacobianinput!(f, jacobian_input::IdentityMatrix)
+    
+    # set input
+    f.memory.jacobian_input = jacobian_input
 
 end
 

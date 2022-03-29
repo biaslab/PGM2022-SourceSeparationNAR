@@ -110,7 +110,7 @@ nr_params(layer::DenseLayer) = length(layer.W) + length(layer.b)
 function deploy(layer::DenseLayer; jacobian_start=IdentityMatrix())
 
     jacobian_layer = jacobian(layer, randn(layer.dim_in))
-    jacobian_layer_output = jacobian_start * jacobian_layer
+    jacobian_layer_output = jacobian_layer * jacobian_start
 
 
     return DenseLayer(

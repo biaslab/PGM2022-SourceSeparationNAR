@@ -212,7 +212,7 @@ function forward_jacobian(model::Model, input::Vector{<:Real})
     layers = model.layers
 
     # set temporary jacobian
-    current_J = I
+    current_J = IdentityMatrix()
 
     # set current input
     current_input = copy(input)
@@ -253,7 +253,7 @@ function forward_jacobian!(model::Model)
 
     # fetch starting input and starting jacobian
     current_input = getmatinput(model)
-    current_jacobian_input = I
+    current_jacobian_input = IdentityMatrix()
 
     # propagate through layers
     @inbounds for layer in layers
@@ -379,7 +379,7 @@ nr_params(model::Model) = mapreduce(nr_params, +, model.layers)
 function deploy(model::Model; jacobian_start=IdentityMatrix())
 
     jacobian_model = jacobian(model, randn(model.dim_in))
-    jacobian_model_output = jacobian_start*jacobian_model
+    jacobian_model_output = jacobian_model * jacobian_start
 
     deployed_layers = Vector{AbstractLayer}(undef, length(model.layers))
 
@@ -393,7 +393,7 @@ function deploy(model::Model; jacobian_start=IdentityMatrix())
         jacobian_layer = jacobian(layer, randn(layer.dim_in))
 
         # output 
-        jacobian_layer_start = jacobian_layer_start * jacobian_layer
+        jacobian_layer_start = jacobian_layer * jacobian_layer_start
 
     end
 

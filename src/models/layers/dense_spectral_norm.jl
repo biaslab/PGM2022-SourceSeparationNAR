@@ -41,6 +41,10 @@ function forward!(layer::DenseSNLayer{<:AbstractMemory,W,B}) where { W, B }
     
 end
 
+function forward_jacobian!(layer::DenseSNLayer{<:DeployMemory,WT,BT}) where { WT, BT }
+    return forward!(layer), custom_mul!(getmatjacobianoutput(layer), getmat(layer.W), getmatjacobianinput(layer))
+end
+
 function jacobian(layer::DenseSNLayer, ::Vector{<:Real})
     return getmat(layer.W)
 end
@@ -118,13 +122,24 @@ isinvertible(layer::DenseSNLayer) = false
 
 nr_params(layer::DenseSNLayer) = length(layer.W) + length(layer.b)
 
-function deploy(layer::DenseSNLayer, start_dim::Int)
+function deploy(layer::DenseSNLayer; jacobian_start=IdentityMatrix())
+
+    jacobian_layer = jacobian(layer, randn(layer.dim_in))
+    jacobian_layer_output = jacobian_layer * jacobian_start
+
+
     return DenseSNLayer(
         layer.dim_in,
         layer.dim_out,
         normalize!(layer.W),
-        layer.b.value,
-        DeployMemory(layer.dim_in, layer.dim_out, start_dim)
+        getvalue(layer.b),
+        DeployMemory(
+            randn(layer.dim_in),
+            randn(layer.dim_out),
+            jacobian_layer,
+            jacobian_start,
+            jacobian_layer_output
+        )
     )
 end
 

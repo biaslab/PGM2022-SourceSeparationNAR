@@ -26,9 +26,6 @@ function custom_mul(A::AbstractMatrix{T}, X::AbstractMatrix{T}) where { T <: Rea
 
 end
 
-custom_mul(A::AbstractMatrix, ::UniformScaling) = A
-custom_mul(::UniformScaling, A::AbstractMatrix) = A
-
 function custom_mul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::Vector{T}) where { T <: Real }
     (ax1, ax2) = axes(A)
     @turbo for k1 ∈ ax1
@@ -52,13 +49,15 @@ function custom_mul!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, X::AbstractMatr
     return Y
 end
 
-function custom_mul!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, ::UniformScaling) where { T <: Real }
-    @turbo Y .= A
-    return Y
-end
-
-function custom_mul!(Y::AbstractMatrix{T}, ::UniformScaling, A::AbstractMatrix{T}) where { T <: Real }
-    @turbo Y .= A
+function custom_mul!(Y::AbstractMatrix{T}, A::Diagonal{T,Vector{T}}, X::AbstractMatrix{T}) where { T <: Real }
+    diag = A.diag
+    @turbo for m ∈ axes(A,1), n ∈ axes(X,2)
+        Ymn = zero(T)
+        for k ∈ axes(A,2)
+            Ymn += diag[k] * X[k,n]
+        end
+        Y[m,n] = Ymn
+    end
     return Y
 end
 
@@ -145,4 +144,17 @@ function meandot(A, B, C)
         end
     end
     return tmp1/batch_size
+end
+
+custom_mul(A, X::IdentityMatrix) = A
+custom_mul(X::IdentityMatrix, A) = A
+custom_mul!(B, A, X::IdentityMatrix) = @turbo B .= A
+custom_mul!(B, X::IdentityMatrix, A) = @turbo B .= A
+function custom_mul!(B::CompanionMatrix, A::CompanionMatrix, X::IdentityMatrix)
+    @turbo B.θ .= A.θ
+    return B
+end
+function custom_mul!(B::CompanionMatrix, X::IdentityMatrix, A::CompanionMatrix)
+    @turbo B.θ .= A.θ
+    return B
 end

@@ -49,6 +49,26 @@ function backward(layer::LeakyReluLayer, output)
 
 end
 
+function forward_jacobian!(layer::LeakyReluLayer{<:DeployMemory})
+
+    # compute output
+    output = forward!(layer)
+    
+    # compute jacobian
+    input = getinput(layer)
+    jacobian_layer = getjacobian(layer)
+    alpha = layer.alpha
+    @turbo for k in 1:length(input)
+        jacobian_layer.diag[k] = !signbit(input[k])*(1-alpha) + alpha
+    end
+
+    # compute jacobian at output 
+    custom_mul!(getjacobianoutput(layer), jacobian_layer, getjacobianinput(layer))
+
+    return output, getjacobianoutput(layer)
+
+end
+
 function jacobian(layer::LeakyReluLayer, input::Vector{T}) where { T <: Real }
 
     # create jacobian
@@ -92,7 +112,11 @@ isinvertible(layer::LeakyReluLayer) = layer.alpha > 0
 
 nr_params(::LeakyReluLayer) = 0
 
-function deploy(layer::LeakyReluLayer, start_dim)
+function deploy(layer::LeakyReluLayer; jacobian_start=IdentityMatrix())
+
+    jacobian_layer = jacobian(layer, randn(layer.dim_in))
+    jacobian_layer_output = jacobian_layer * jacobian_start
+
     return LeakyReluLayer(
         layer.dim_in,
         layer.dim_out,
@@ -100,12 +124,14 @@ function deploy(layer::LeakyReluLayer, start_dim)
         DeployMemory(
             zeros(layer.dim_in), 
             zeros(layer.dim_out), 
-            zeros(layer.dim_in),
-            Diagonal(zeros(layer.dim_in)),
-            zeros(start_dim, layer.dim_out)
+            jacobian_layer,
+            jacobian_start,
+            jacobian_layer_output
         )
     )
 end
+
+
 
 function print_info(layer::LeakyReluLayer, level::Int, io)
 
