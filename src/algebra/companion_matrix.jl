@@ -264,7 +264,7 @@ function tri_matmul!(D::AbstractMatrix, A::CompanionMatrix, B::AbstractMatrix, C
     Cθ = C.θ
     
     @turbo for m ∈ 1:dim-1, n ∈ 1:dim-1
-            D[m+1, n+1] = B[m,n]
+        D[m+1, n+1] = B[m,n]
     end
 
     @turbo for m ∈ 2:dim
@@ -293,6 +293,8 @@ function tri_matmul!(D::AbstractMatrix, A::CompanionMatrix, B::AbstractMatrix, C
         D11 += temp * Cθm
     end
     D[1,1] = D11
+
+    return D
 
 end
 
