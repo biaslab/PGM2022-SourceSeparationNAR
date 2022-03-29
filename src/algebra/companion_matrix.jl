@@ -260,37 +260,39 @@ end
 
 function tri_matmul!(D::AbstractMatrix, A::CompanionMatrix, B::AbstractMatrix, C::CompanionMatrixTransposed)
     dim = size(D,1)
-    for ki = 1:dim-1
-        for kii = 1:dim-1
-            D[ki+1, kii+1] = B[ki,kii]
-        end
+    Aθ = A.θ
+    Cθ = C.θ
+    
+    @turbo for m ∈ 1:dim-1, n ∈ 1:dim-1
+            D[m+1, n+1] = B[m,n]
     end
 
-    for ki = 2:dim
-        D[ki, 1] = 0.0
-        for kii = 1:dim
-            D[ki, 1] += B[ki-1,kii] * C[kii,1]
+    @turbo for m ∈ 2:dim
+        Dm1 = zero(Float64)
+        for n ∈ 1:dim
+            Dm1 += B[m-1,n] * Cθ[n]
         end
+        D[m,1] = Dm1
     end
 
-    for ki = 2:dim
-        D[1,ki] = 0.0
-        for kii = 1:dim
-            D[1,ki] += B[kii,ki-1] * A[1,kii]
+    @turbo for m ∈ 2:dim
+        D1m = zero(Float64)
+        for n ∈ 1:dim
+            D1m += B[n,m-1] * Aθ[n]
         end
+        D[1,m] = D1m
     end
 
-    D[1,1] = 0
-    @inbounds for j in 1:dim
-        yj = C[j,1]
-        if !iszero(yj)
-            temp = 0.0
-            @simd for i in 1:dim
-                temp += adjoint(B[i,j]) * A[1,i]
-            end
-            D[1,1] += dot(temp, yj)
+    D11 = zero(Float64)
+    @turbo for m in 1:dim
+        Cθm = Cθ[m]
+        temp = zero(Float64)
+        for n in 1:dim
+            temp += adjoint(B[n,m]) * Aθ[n]
         end
+        D11 += temp * Cθm
     end
+    D[1,1] = D11
 
 end
 
