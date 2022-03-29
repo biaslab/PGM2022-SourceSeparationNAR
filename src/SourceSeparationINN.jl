@@ -15,10 +15,12 @@ module SourceSeparationINN
     include("models/model.jl")
 
     include("losses/losses.jl")
-
-    include("run.jl")
-
+    
     include("data.jl")
+
+    include("ekf.jl")
+    
+    include("run.jl")
 
     include("log.jl")
 
