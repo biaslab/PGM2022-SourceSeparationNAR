@@ -1,4 +1,4 @@
-function EKF_deployed(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; dim_in=16)
+function EKF(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; dim_in=16)
 
     # allocate output
     m_s_f = zeros(length(signal_mix))
@@ -59,6 +59,77 @@ function EKF_deployed(signal_mix, model_signal, model_noise, m_x_prior, V_x_prio
             V_x_sn[m,n] = V_x_new_sn[m,n] - K[m] * V_x_new_sn[1,n] - K[m] * V_x_new_nn[1,n]
             V_x_ns[m,n] = V_x_new_ns[m,n] - K[m+dim_in] * V_x_new_ss[1,n] - K[m+dim_in] * V_x_new_ns[1,n]
             V_x_nn[m,n] = V_x_new_nn[m,n] - K[m+dim_in] * V_x_new_sn[1,n] - K[m+dim_in] * V_x_new_nn[1,n]
+        end
+
+        # save values
+        m_s_f[k] = m_x_s[1]
+        V_s_f[k] = V_x_ss[1,1]
+        m_n_f[k] = m_x_n[1]
+        V_n_f[k] = V_x_nn[1, 1]
+
+    end
+
+
+    # return output
+    return m_s_f, V_s_f, m_n_f, V_n_f
+    
+end
+
+function EKF_split(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; dim_in=16)
+
+    # allocate output
+    m_s_f = zeros(length(signal_mix))
+    V_s_f = zeros(length(signal_mix))
+    m_n_f = zeros(length(signal_mix))
+    V_n_f = zeros(length(signal_mix))
+
+    # initialize intermediate values
+    Ks = zeros(dim_in)
+    Kn = zeros(dim_in)
+
+    m_x_s = m_x_prior[1:dim_in]
+    m_x_n = m_x_prior[1+dim_in:end]
+
+    V_x_ss = V_x_prior[1:dim_in, 1:dim_in]
+    V_x_nn = V_x_prior[1+dim_in:end, 1+dim_in:end]
+    V_x_new_ss = randn(dim_in, dim_in)
+    V_x_new_nn = randn(dim_in, dim_in)
+
+    # kalman filtering
+    @inbounds for k in dim_in+1:length(signal_mix)
+    
+        # run models forward
+        m_x_s_new, Jcs = forward_jacobian!(model_signal, m_x_s)
+        m_x_n_new, Jcn = forward_jacobian!(model_noise, m_x_n)
+
+        SourceSeparationINN.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
+        V_x_new_ss[1,1] += Q[1,1]
+        SourceSeparationINN.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
+        V_x_new_nn[1,1] += Q[1+dim_in, 1+dim_in]
+
+    
+        # filtering messages
+        y = signal_mix[k] - m_x_s_new[1] - m_x_n_new[1] 
+        S = V_x_new_ss[1,1] + V_x_new_nn[1,1] + R
+
+        # calculate kalman gain
+        @turbo for k = 1:dim_in
+            Ks[k] = V_x_new_ss[k,1]
+            Kn[k] = V_x_new_nn[k,1]
+        end
+        Ks ./= S
+        Kn ./= S
+
+        # update mean
+        @turbo for k in 1:dim_in
+            m_x_s[k] = m_x_s_new[k] + Ks[k]*y
+            m_x_n[k] = m_x_n_new[k] + Kn[k]*y
+        end
+
+        # update variance
+        @turbo for m ∈ 1:dim_in, n ∈ 1:dim_in
+            V_x_ss[m,n] = V_x_new_ss[m,n] - Ks[m] * V_x_new_ss[1,n]
+            V_x_nn[m,n] = V_x_new_nn[m,n] - Kn[m] * V_x_new_nn[1,n]
         end
 
         # save values
