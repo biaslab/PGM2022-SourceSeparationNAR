@@ -4,7 +4,7 @@ import Base: *
 import LinearAlgebra: transpose, inv
 
 using LinearAlgebra: checksquare
-using LoopVectorization: @turbo, @tturbo
+using LoopVectorization: @turbo, @turbo
 
 
 """

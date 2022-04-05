@@ -37,9 +37,14 @@ end
 function forward!(layer::DenseLayer{<:AbstractMemory,WT,BT}) where { WT, BT }
 
     # calculate and return output
-    return custom_mulp!(getmatoutput(output), getvalue(layer.W), getmatinput(input), getvalue(layer.b))
+    return custom_mulp!(getmatoutput(layer), getvalue(layer.W), getmatinput(layer), getvalue(layer.b))
 
 end
+
+function forward_jacobian!(layer::DenseLayer{<:DeployMemory,WT,BT}) where { WT, BT }
+    return forward!(layer), custom_mul!(getmatjacobianoutput(layer), getmat(layer.W), getmatjacobianinput(layer))
+end
+
 
 function jacobian(layer::DenseLayer, ::Vector{<:Real})
     return getvalue(layer.W)
