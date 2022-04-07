@@ -24,4 +24,6 @@ module SourceSeparationINN
 
     include("log.jl")
 
+    include("ReactiveMP.jl")
+    
 end
