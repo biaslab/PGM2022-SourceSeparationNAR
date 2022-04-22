@@ -1,4 +1,4 @@
-export Model
+# export Model
 export ARLayer, DenseSNLayer, DenseLayer, iARLayer, LeakyReluLayer, MvAdditiveLayer, PermutationLayer, ReluLayer, ResidualLayer, SoftmaxLayer
 
 export forward, backward, jacobian, invjacobian, forward_jacobian
