@@ -116,7 +116,7 @@ function custom_mulp!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}, X::AbstractMat
     return Y
 end
 
-function meandot(A, B, C)
+function sumdiagdot(A, B, C)
     M, batch_size = size(A)
     N = size(B,2)
 
@@ -131,7 +131,7 @@ function meandot(A, B, C)
             tmp1 += tmp2
         end
     end
-    return tmp1/batch_size
+    return tmp1
 end
 
 custom_mul(A, X::IdentityMatrix) = A

@@ -81,11 +81,8 @@ function propagate_error!(layer::DenseSNLayer{<:TrainMemory,W,B}) where { W, B }
 
     # set gradient for W
     ∂L_∂Wsn = similar(∂L_∂W)
-    custom_mul!(∂L_∂Wsn, ∂L_∂y, input') # E[δ * h^⊤]
-    # λ = mean(∂L_∂y' * Wsn * input) # E[δ^⊤ * (Wsn * h)]
-    # println(λ)
-    # λ = mean(diag(∂L_∂y' * Wsn * input))
-    λ = meandot(∂L_∂y, Wsn, input)
+    custom_mul!(∂L_∂Wsn, ∂L_∂y, input') # E[δ * h^⊤]*batchsize
+    λ = sumdiagdot(∂L_∂y, Wsn, input)    # do not compensate for batch size as this is done later on!
 
     ibatch_sizeσ = ibatch_size / σ # todo: should C also be here?
     @turbo for k1 in 1:dim_out
