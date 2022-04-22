@@ -75,7 +75,7 @@ function EKF(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; 
     
 end
 
-function EKF_split(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; dim_in=16)
+function EKF_split(signal_mix, model_signal, model_noise, m_s_prior, V_s_prior, m_n_prior, V_n_prior, R, Qs, Qn; dim_in=16)
 
     # allocate output
     m_s_f = zeros(length(signal_mix))
@@ -87,11 +87,11 @@ function EKF_split(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, 
     Ks = zeros(dim_in)
     Kn = zeros(dim_in)
 
-    m_x_s = m_x_prior[1:dim_in]
-    m_x_n = m_x_prior[1+dim_in:end]
+    m_x_s = copy(m_s_prior)
+    m_x_n = copy(m_n_prior)
 
-    V_x_ss = V_x_prior[1:dim_in, 1:dim_in]
-    V_x_nn = V_x_prior[1+dim_in:end, 1+dim_in:end]
+    V_x_ss = copy(V_s_prior)
+    V_x_nn = copy(V_n_prior)
     V_x_new_ss = randn(dim_in, dim_in)
     V_x_new_nn = randn(dim_in, dim_in)
 
@@ -103,9 +103,9 @@ function EKF_split(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, 
         m_x_n_new, Jcn = forward_jacobian!(model_noise, m_x_n)
 
         SourceSeparationINN.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
-        V_x_new_ss[1,1] += Q[1,1]
+        V_x_new_ss[1,1] += Qs[1,1]
         SourceSeparationINN.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
-        V_x_new_nn[1,1] += Q[1+dim_in, 1+dim_in]
+        V_x_new_nn[1,1] += Qn[1,1]
 
     
         # filtering messages
