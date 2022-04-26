@@ -23,9 +23,9 @@ function plot_logs(; path="logs/", logscale=false, loss=["mse", "mae"])
             for col in filter((x) -> x in loss, cols)
 
                 if logscale
-                    plt.plot(df[!,"epoch"], log.(df[!, col]), label=string(folder, "-", col, "-", file[1:end-4]))
+                    plt.plot(df[!,"epoch"], log.(df[!, col]), label=string(folder, "-", col, "-", file[1:end-4]), alpha=0.5)
                 else
-                    plt.plot(df[!,"epoch"], df[!, col], label=string(folder, "-", col, "-", file[1:end-4]))
+                    plt.plot(df[!,"epoch"], df[!, col], label=string(folder, "-", col, "-", file[1:end-4]), alpha=0.5)
                 end
 
             end
