@@ -29,7 +29,10 @@ fig = @pgf GroupPlot(
             vertical_sep = "0.5cm"
         },
         label_style={font="\\footnotesize"},
-        legend_style={font="\\footnotesize"},
+        legend_style={
+            font="\\footnotesize",
+            row_sep="-3pt"
+        },
         ticklabel_style={font="\\scriptsize"}
     },
     
