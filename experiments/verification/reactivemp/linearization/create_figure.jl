@@ -40,7 +40,7 @@ fig = @pgf GroupPlot(
     {
         grid = "major",
         style = {thick},
-        width = "\\linewidth",
+        width = "3.5in",
         height = "3cm",
         xmin = 0,
         xmax = 250,
@@ -140,7 +140,7 @@ fig = @pgf GroupPlot(
         ylabel="signal and noise",
         grid = "major",
         style = {thick},
-        width = "\\linewidth",
+        width = "3.5in",
         height = "3cm",
         xmin = 0,
         xmax = 250,
@@ -240,7 +240,7 @@ fig = @pgf GroupPlot(
         xlabel="\$t\$",
         grid = "major",
         style = {thick},
-        width = "\\linewidth",
+        width = "3.5in",
         height = "3cm",
         xmin = 0,
         xmax = 250,
@@ -337,5 +337,6 @@ fig = @pgf GroupPlot(
 
 
 pgfsave("linearization_median.tikz", fig)
+pgfsave("linearization_median.pdf", fig)
 
 return fig
