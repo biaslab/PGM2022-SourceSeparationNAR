@@ -23,5 +23,7 @@ module SourceSeparationINN
     include("run.jl")
 
     include("log.jl")
+
+    include("metrics.jl")
     
 end
