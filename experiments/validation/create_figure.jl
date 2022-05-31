@@ -2,6 +2,7 @@
 using SourceSeparationNAR
 using PGFPlotsX
 using JLD2
+using ReactiveMP
 
 # load signals
 signal_true = load("sphericalsimplex/speech-airco-16/exports/separated_signals.jld2", "signal_true")
@@ -11,6 +12,8 @@ noise_separated = load("sphericalsimplex/speech-airco-16/exports/separated_signa
 mix = signal_true + noise_true
 
 # give SNR
+println("old SNR: ", SNR(signal_true, mix), " dB")
+println("new SNR: ", SNR(signal_true, mean.(signal_separated)), " dB")
 println("ΔSNR: ", SNR(signal_true, mean.(signal_separated)) - SNR(signal_true, mix), " dB")
 
 # decimate signals for memory efficiency
@@ -40,14 +43,16 @@ fig = @pgf Axis(
     # axis 1
     {
         grid = "major",
-        width = "3.5in",
+        width = "6.0in",
         height = "6cm",
         xmin = 0,
         xmax = xmax,
         ymin = -25,
         ymax = 7,
-        ytick="\\empty",
+        ytick={"0", "-10", "-20"},
+        yticklabels={a, b, c},
         label_style={font="\\footnotesize"},
+        legend_cell_align="left",
         legend_style={
             font="\\footnotesize",
             row_sep="-3pt"
@@ -63,21 +68,21 @@ fig = @pgf Axis(
         },
         Table((1:length(mix))./fs, mix)
     ),
-    LegendEntry("speech + airco"),
+    LegendEntry("a) speech + airco"),
     Plot(
         {
             color="orange",
         },
         Table((1:length(signal_separated))./fs, mean.(signal_separated) .- 10)
     ),
-    LegendEntry("inferred speech"),
+    LegendEntry("b) inferred speech"),
     Plot(
         {
             color="red",
         },
         Table((1:length(signal_true))./fs, signal_true .- 20)
     ),
-    LegendEntry("true speech"),
+    LegendEntry("c) true speech"),
 )
 
 
