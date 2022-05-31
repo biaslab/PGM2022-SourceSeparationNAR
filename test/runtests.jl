@@ -1,6 +1,6 @@
-module SourceSeparationINNTest
+module SourceSeparationNARTest
 
-    using SourceSeparationINN
+    using SourceSeparationNAR
     using Test
 
     @testset "Algebra" begin

@@ -1,5 +1,5 @@
 # load packages
-using SourceSeparationINN
+using SourceSeparationNAR
 using PGFPlotsX
 using JLD2
 

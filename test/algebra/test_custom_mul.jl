@@ -1,6 +1,6 @@
 @testset "Custom multiplication" begin
 
-    using SourceSeparationINN: custom_mul, custom_mulp
+    using SourceSeparationNAR: custom_mul, custom_mulp
 
     @testset "custom_mul(A::AbstractMatrix, x::AbstractVector)" begin
         

@@ -28,11 +28,11 @@ function EKF(signal_mix, model_signal, model_noise, m_x_prior, V_x_prior, R, Q; 
         m_x_s_new, Jcs = forward_jacobian!(model_signal, m_x_s)
         m_x_n_new, Jcn = forward_jacobian!(model_noise, m_x_n)
 
-        SourceSeparationINN.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
+        SourceSeparationNAR.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
         V_x_new_ss[1,1] += Q[1,1]
-        SourceSeparationINN.tri_matmul!(V_x_new_sn, Jcs, V_x_sn, Jcn')
-        SourceSeparationINN.tri_matmul!(V_x_new_ns, Jcn, V_x_ns, Jcs')
-        SourceSeparationINN.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
+        SourceSeparationNAR.tri_matmul!(V_x_new_sn, Jcs, V_x_sn, Jcn')
+        SourceSeparationNAR.tri_matmul!(V_x_new_ns, Jcn, V_x_ns, Jcs')
+        SourceSeparationNAR.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
         V_x_new_nn[1,1] += Q[1+dim_in, 1+dim_in]
 
     
@@ -102,9 +102,9 @@ function EKF_split(signal_mix, model_signal, model_noise, m_s_prior, V_s_prior, 
         m_x_s_new, Jcs = forward_jacobian!(model_signal, m_x_s)
         m_x_n_new, Jcn = forward_jacobian!(model_noise, m_x_n)
 
-        SourceSeparationINN.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
+        SourceSeparationNAR.tri_matmul!(V_x_new_ss, Jcs, V_x_ss, Jcs')
         V_x_new_ss[1,1] += Qs[1,1]
-        SourceSeparationINN.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
+        SourceSeparationNAR.tri_matmul!(V_x_new_nn, Jcn, V_x_nn, Jcn')
         V_x_new_nn[1,1] += Qn[1,1]
 
     

@@ -1,14 +1,14 @@
 # this file extends upon the basic functionality of ReactiveMP.
 export Nar, NarMeta
 
-using SourceSeparationINN: fastcholesky
+using SourceSeparationNAR: fastcholesky
 
 # create Nar node
 struct Nar end
 @node Nar Deterministic [ out, in ]
 
 # create Nar meta data
-struct NarMeta{T <: SourceSeparationINN.Model, A <: ReactiveMP.AbstractNonLinearApproximation}
+struct NarMeta{T <: SourceSeparationNAR.Model, A <: ReactiveMP.AbstractNonLinearApproximation}
     model         :: T
     approximation :: A
 end
@@ -150,7 +150,7 @@ end
 
     # calculate sigma points
     sqrtΣ = fastcholesky(Σ_in).L
-    SourceSeparationINN.custom_mulp!(Z, sqrtΣ, X, μ_in)
+    SourceSeparationNAR.custom_mulp!(Z, sqrtΣ, X, μ_in)
  
     # transform sigma points
     for i in 1:dim+2

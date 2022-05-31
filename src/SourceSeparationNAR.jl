@@ -1,4 +1,4 @@
-module SourceSeparationINN
+module SourceSeparationNAR
 
     include("algebra/cholesky.jl")
     include("algebra/identity_matrix.jl")
