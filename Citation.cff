@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "Please cite this research as below."
+authors:
+- family-names: "van Erp"
+  given-names: "Bart"
+  orcid: "https://orcid.org/0000-0002-5619-7071"
+- family-names: "de Vries"
+  given-names: "Bert"
+title: "Online Single-Microphone Source Separation using Non-Linear Autoregressive Models"
+version: 1.0.0
+date-released: 2022-06-01
+url: "https://github.com/biaslab/PGM2022-SourceSeparationNAR"
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: "van Erp"
+    given-names: "Bart"
+    orcid: "https://orcid.org/0000-0002-5619-7071"
+  - family-names: "de Vries"
+    given-names: "Bert"
+  title: "Online Single-Microphone Source Separation using Non-Linear Autoregressive Models"
+  year: 2022
+  month: 09
+  conference:
+    - name: The 11th International Conference on Probabilistic Graphical Models (PGM)
+  start: 37
+  end: 48
