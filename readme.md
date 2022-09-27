@@ -1,6 +1,6 @@
 # Online Single-Microphone Source Separation using Non-Linear Autoregressive Models
 *By Bart van Erp and Bert de Vries*
-### Accepted to the 11th International Conference on Probabilistic Graphical Models (PGM) 2022
+### Published in the 11th International Conference on Probabilistic Graphical Models (PGM) 2022
 ---
 **Abstract**
 
